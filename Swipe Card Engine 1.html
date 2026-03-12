@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipeFlow - Professional Card Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tinder, Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .deck-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .deck-dropdown {
+            padding: 10px 15px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            flex: 1;
+            align-items: stretch;
+        }
+
+        .card-container {
+            flex: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            min-height: 500px;
+        }
+
+        .card-stack {
+            position: relative;
+            width: 350px;
+            height: 500px;
+            perspective: 1000px;
+        }
+
+        .swipe-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backface-visibility: hidden;
+        }
+
+        .swipe-card:active {
+            cursor: grabbing;
+        }
+
+        .card-header {
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+
+        .card-type {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .card-counter {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .card-content {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .card-main-text {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .card-sub-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 25px;
+            background: rgba(248, 249, 250, 0.8);
+        }
+
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .reject-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .like-btn {
+            background: linear-gradient(45deg, #51cf66, #40c057);
+            color: white;
+        }
+
+        .sidebar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .stats-section {
+            margin-bottom: 30px;
+        }
+
+        .stats-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .recent-actions {
+            margin-top: 30px;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .action-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+        }
+
+        .liked { background: #51cf66; }
+        .rejected { background: #ff6b6b; }
+
+        .swipe-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .swipe-hint.like {
+            color: #51cf66;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .swipe-hint.reject {
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .deck-type-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .deck-type-option {
+            padding: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .deck-type-option:hover,
+        .deck-type-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .deck-type-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .deck-type-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .card-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .card-list-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .delete-card-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .completion-celebration {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(81, 207, 102, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .celebration-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-30px); }
+            60% { transform: translateY(-15px); }
+        }
+
+        .celebration-text {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .celebration-subtext {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .card-stack {
+                width: 300px;
+                height: 450px;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header-controls {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">SwipeFlow</div>
+            <div class="header-controls">
+                <div class="deck-selector">
+                    <select class="deck-dropdown" id="deckSelector">
+                        <option value="">Select Deck</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="openCreateDeckModal()">Create Deck</button>
+                <button class="btn btn-primary" onclick="openAddCardModal()">Add Card</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="card-container">
+                <div class="card-stack" id="cardStack">
+                    <div class="swipe-hint" id="swipeHint"></div>
+                    <div class="completion-celebration" id="completionCelebration">
+                        <div class="celebration-icon">🎉</div>
+                        <div class="celebration-text">Deck Complete!</div>
+                        <div class="celebration-subtext">Great job finishing this deck</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="stats-section">
+                    <h3 class="stats-title">Session Stats</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Cards Reviewed</span>
+                        <span class="stat-value" id="cardsReviewed">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Liked</span>
+                        <span class="stat-value" id="likedCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Rejected</span>
+                        <span class="stat-value" id="rejectedCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Remaining</span>
+                        <span class="stat-value" id="remainingCount">0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="recent-actions">
+                    <h3 class="stats-title">Recent Actions</h3>
+                    <div id="recentActionsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Deck Modal -->
+    <div class="modal" id="createDeckModal">
+        <div class="modal-content">
+            <h2 class="modal-header">Create New Deck</h2>
+            <form id="createDeckForm">
+                <div class="form-group">
+                    <label class="form-label">Deck Name</label>
+                    <input type="text" class="form-input" id="deckName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Deck Type</label>
+                    <div class="deck-type-selector">
+                        <div class="deck-type-option" data-type="startup">
+                            <div class="deck-type-icon">💡</div>
+                            <div class="deck-type-name">Startup Ideas</div>
+                        </div>
+                        <div class="deck-type-option" data-type="affirmation">
+                            <div class="deck-type-icon">✨</div>
+                            <div class="deck-type-name">Affirmations</div>
+                        </div>
+                        <div class="deck-type-option selected" data-type="flashcard">
+                            <div class="deck-type-icon">📚</div>
+                            <div class="deck-type-name">Flashcards</div>
+                        </div>
+                        <div class="deck-type-option" data-type="custom">
+                            <div class="deck-type-icon">⚙️</div>
+                            <div class="deck-type-name">Custom</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Create Deck</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createDeckModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Card Modal -->
+    <div class="modal" id="addCardModal">
+        <div class="modal-content">
+            <h2 class="modal-header">Add New Card</h2>
+            <form id="addCardForm">
+                <div class="form-group">
+                    <label class="form-label">Front Text</label>
+                    <textarea class="form-input form-textarea" id="cardFront" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Back Text (Optional)</label>
+                    <textarea class="form-input form-textarea" id="cardBack"></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Add Card</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCardModal')">Cancel</button>
+                </div>
+            </form>
+            
+            <div style="margin-top: 30px;">
+                <h3 class="stats-title">Cards in Current Deck</h3>
+                <div class="card-list" id="cardList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class SwipeCardEngine {
+            constructor() {
+                this.decks = this.loadDecks();
+                this.currentDeck = null;
+                this.currentCards = [];
+                this.cardIndex = 0;
+                this.stats = {
+                    cardsReviewed: 0,
+                    liked: 0,
+                    rejected: 0
+                };
+                this.recentActions = [];
+                this.isDragging = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.currentX = 0;
+                this.currentY = 0;
+                
+                this.init();
+            }
+
+            init() {
+                this.loadSampleDecks();
+                this.setupEventListeners();
+                this.updateDeckSelector();
+                this.updateStats();
+                
+                // Load first deck if available
+                if (this.decks.length > 0) {
+                    this.loadDeck(this.decks[0].id);
+                }
+            }
+
+            loadSampleDecks() {
+                if (this.decks.length === 0) {
+                    const sampleDecks = [
+                        {
+                            id: 'startup-ideas',
+                            name: 'Startup Ideas',
+                            type: 'startup',
+                            cards: [
+                                { front: 'AI-powered personal fitness coach that adapts to your lifestyle', back: 'Market size: $30B fitness industry' },
+                                { front: 'Sustainable packaging marketplace for small businesses', back: 'Environmental impact: Reduce plastic waste by 40%' },
+                                { front: 'Virtual reality meditation experiences for corporate wellness', back: 'Target: Fortune 500 companies' },
+                                { front: 'Blockchain-based intellectual property protection', back: 'Legal-tech disruption opportunity' },
+                                { front: 'Smart home energy optimization using machine learning', back: 'Potential savings: 30% on energy bills' }
+                            ]
+                        },
+                        {
+                            id: 'daily-affirmations',
+                            name: 'Daily Affirmations',
+                            type: 'affirmation',
+                            cards: [
+                                { front: 'I am capable of achieving great things today', back: 'Believe in your potential' },
+                                { front: 'Challenges are opportunities for growth', back: 'Embrace difficulties as learning experiences' },
+                                { front: 'I choose to focus on what I can control', back: 'Let go of what you cannot change' },
+                                { front: 'My unique perspective adds value to the world', back: 'Your voice matters' },
+                                { front: 'I am worthy of success and happiness', back: 'You deserve good things' }
+                            ]
+                        },
+                        {
+                            id: 'javascript-concepts',
+                            name: 'JavaScript Concepts',
+                            type: 'flashcard',
+                            cards: [
+                                { front: 'What is closure in JavaScript?', back: 'A closure gives you access to an outer function\'s scope from an inner function' },
+                                { front: 'Explain hoisting', back: 'JavaScript\'s default behavior of moving declarations to the top of the scope' },
+                                { front: 'What is the event loop?', back: 'Mechanism that handles asynchronous operations in JavaScript' },
+                                { front: 'Difference between let and var?', back: 'let has block scope, var has function scope' },
+                                { front: 'What is a Promise?', back: 'Object representing eventual completion or failure of an async operation' }
+                            ]
+                        }
+                    ];
+                    
+                    this.decks = sampleDecks;
+                    this.saveDecks();
+                }
+            }
+
+            setupEventListeners() {
+                // Deck selector
+                document.getElementById('deckSelector').addEventListener('change', (e) => {
+                    if (e.target.value) {
+                        this.loadDeck(e.target.value);
+                    }
+                });
+
+                // Card interaction events
+                document.addEventListener('mousedown', this.handleStart.bind(this));
+                document.addEventListener('mousemove', this.handleMove.bind(this));
+                document.addEventListener('mouseup', this.handleEnd.bind(this));
+                
+                // Touch events for mobile
+                document.addEventListener('touchstart', this.handleStart.bind(this));
+                document.addEventListener('touchmove', this.handleMove.bind(this));
+                document.addEventListener('touchend', this.handleEnd.bind(this));
+
+                // Action buttons
+                document.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('reject-btn')) {
+                        this.swipeCard('reject');
+                    } else if (e.target.classList.contains('like-btn')) {
+                        this.swipeCard('like');
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') {
+                        this.swipeCard('reject');
+                    } else if (e.key === 'ArrowRight') {
+                        this.swipeCard('like');
+                    } else if (e.key === ' ') {
+                        e.preventDefault();
+                        this.flipCard();
+                    }
+                });
+
+                // Form submissions
+                document.getElementById('createDeckForm').addEventListener('submit', this.handleCreateDeck.bind(this));
+                document.getElementById('addCardForm').addEventListener('submit', this.handleAddCard.bind(this));
+
+                // Deck type selection
+                document.querySelectorAll('.deck-type-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.deck-type-option').forEach(o => o.classList.remove('selected'));
+                        option.classList.add('selected');
+                    });
+                });
+
+                // Modal close on background click
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            this.closeModal(modal.id);
+                        }
+                    });
+                });
+            }
+
+            handleStart(e) {
+                const card = e.target.closest('.swipe-card');
+                if (!card || !this.currentCards.length) return;
+
+                this.isDragging = true;
+                this.startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                this.startY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+                
+                card.style.transition = 'none';
+                e.preventDefault();
+            }
+
+            handleMove(e) {
+                if (!this.isDragging || !this.currentCards.length) return;
+
+                const card = document.querySelector('.swipe-card');
+                if (!card) return;
+
+                this.currentX = (e.type === 'mousemove' ? e.clientX : e.touches[0].clientX) - this.startX;
+                this.currentY = (e.type === 'mousemove' ? e.clientY : e.touches[0].clientY) - this.startY;
+
+                const rotation = this.currentX * 0.1;
+                const opacity = Math.max(0.3, 1 - Math.abs(this.currentX) / 300);
+
+                card.style.transform = `translateX(${this.currentX}px) translateY(${this.currentY}px) rotate(${rotation}deg)`;
+                card.style.opacity = opacity;
+
+                // Show swipe hints
+                const hint = document.getElementById('swipeHint');
+                if (Math.abs(this.currentX) > 50) {
+                    if (this.currentX > 0) {
+                        hint.textContent = 'LIKE';
+                        hint.className = 'swipe-hint like';
+                    } else {
+                        hint.textContent = 'REJECT';
+                        hint.className = 'swipe-hint reject';
+                    }
+                    hint.style.opacity = Math.min(1, Math.abs(this.currentX) / 150);
+                } else {
+                    hint.style.opacity = 0;
+                }
+            }
+
+            handleEnd(e) {
+                if (!this.isDragging || !this.currentCards.length) return;
+
+                this.isDragging = false;
+                const card = document.querySelector('.swipe-card');
+                const hint = document.getElementById('swipeHint');
+                
+                if (!card) return;
+
+                const threshold = 100;
+                
+                if (Math.abs(this.currentX) > threshold) {
+                    // Complete the swipe
+                    const direction = this.currentX > 0 ? 'like' : 'reject';
+                    this.completeSwipe(card, direction);
+                } else {
+                    // Return to center
+                    card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.transform = 'translateX(0) translateY(0) rotate(0deg)';
+                    card.style.opacity = '1';
+                }
+
+                hint.style.opacity = 0;
+                this.currentX = 0;
+                this.currentY = 0;
+            }
+
+            completeSwipe(card, direction) {
+                const finalX = direction === 'like' ? 1000 : -1000;
+                const finalRotation = direction === 'like' ? 30 : -30;
+                
+                card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.style.transform = `translateX(${finalX}px) rotate(${finalRotation}deg)`;
+                card.style.opacity = '0';
+                
+                setTimeout(() => {
+                    this.swipeCard(direction);
+                }, 300);
+            }
+
+            swipeCard(action) {
+                if (!this.currentCards.length) return;
+
+                const currentCard = this.currentCards[this.cardIndex];
+                
+                // Update stats
+                this.stats.cardsReviewed++;
+                if (action === 'like') {
+                    this.stats.liked++;
+                } else {
+                    this.stats.rejected++;
+                }
+
+                // Add to recent actions
+                this.recentActions.unshift({
+                    action,
+                    card: currentCard.front.substring(0, 50) + (currentCard.front.length > 50 ? '...' : ''),
+                    timestamp: new Date()
+                });
+                
+                if (this.recentActions.length > 5) {
+                    this.recentActions.pop();
+                }
+
+                this.cardIndex++;
+                
+                if (this.cardIndex >= this.currentCards.length) {
+                    this.showCompletion();
+                } else {
+                    this.renderCurrentCard();
+                }
+                
+                this.updateStats();
+                this.updateRecentActions();
+            }
+
+            flipCard() {
+                const card = document.querySelector('.swipe-card');
+                if (!card) return;
+
+                card.style.transform = card.style.transform.includes('rotateY(180deg)') 
+                    ? 'rotateY(0deg)' 
+                    : 'rotateY(180deg)';
+            }
+
+            showCompletion() {
+                const celebration = document.getElementById('completionCelebration');
+                celebration.style.display = 'flex';
+                
+                setTimeout(() => {
+                    celebration.style.display = 'none';
+                    this.resetDeck();
+                }, 3000);
+            }
+
+            resetDeck() {
+                this.cardIndex = 0;
+                this.stats = { cardsReviewed: 0, liked: 0, rejected: 0 };
+                this.recentActions = [];
+                this.renderCurrentCard();
+                this.updateStats();
+                this.updateRecentActions();
+            }
+
+            loadDeck(deckId) {
+                const deck = this.decks.find(d => d.id === deckId);
+                if (!deck) return;
+
+                this.currentDeck = deck;
+                this.currentCards = [...deck.cards];
+                this.cardIndex = 0;
+                this.stats = { cardsReviewed: 0, liked: 0, rejected: 0 };
+                this.recentActions = [];
+                
+                document.getElementById('deckSelector').value = deckId;
+                
+                this.renderCurrentCard();
+                this.updateStats();
+                this.updateRecentActions();
+            }
+
+            renderCurrentCard() {
+                const cardStack = document.getElementById('cardStack');
+                const hint = cardStack.querySelector('.swipe-hint');
+                const celebration = cardStack.querySelector('.completion-celebration');
+                
+                // Clear existing cards
+                cardStack.innerHTML = '';
+                cardStack.appendChild(hint);
+                cardStack.appendChild(celebration);
+
+                if (!this.currentCards.length || this.cardIndex >= this.currentCards.length) {
+                    this.renderEmptyState();
+                    return;
+                }
+
+                // Render current card and next few cards for stack effect
+                for (let i = Math.min(3, this.currentCards.length - this.cardIndex) - 1; i >= 0; i--) {
+                    const cardData = this.currentCards[this.cardIndex + i];
+                    const cardElement = this.createCardElement(cardData, i);
+                    cardStack.appendChild(cardElement);
+                }
+            }
+
+            createCardElement(cardData, stackIndex = 0) {
+                const card = document.createElement('div');
+                card.className = 'swipe-card';
+                
+                // Stack effect
+                const scale = 1 - stackIndex * 0.05;
+                const yOffset = stackIndex * 10;
+                card.style.transform = `scale(${scale}) translateY(${yOffset}px)`;
+                card.style.zIndex = 100 - stackIndex;
+                
+                if (stackIndex > 0) {
+                    card.style.pointerEvents = 'none';
+                }
+
+                const typeIcons = {
+                    startup: '💡',
+                    affirmation: '✨',
+                    flashcard: '📚',
+                    custom: '⚙️'
+                };
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-type">${typeIcons[this.currentDeck?.type] || '📄'} ${this.currentDeck?.type || 'Custom'}</div>
+                        <div class="card-title">${this.currentDeck?.name || 'Card Deck'}</div>
+                        <div class="card-counter">${this.cardIndex + 1} of ${this.currentCards.length}</div>
+                    </div>
+                    <div class="card-content" onclick="this.parentElement.querySelector('.card-main-text').style.display = this.parentElement.querySelector('.card-main-text').style.display === 'none' ? 'block' : 'none'; this.parentElement.querySelector('.card-sub-text').style.display = this.parentElement.querySelector('.card-sub-text').style.display === 'none' ? 'block' : 'none';">
+                        <div class="card-main-text">${cardData.front}</div>
+                        <div class="card-sub-text" style="display: ${cardData.back ? 'none' : 'none'};">${cardData.back || ''}</div>
+                        ${cardData.back ? '<div style="font-size: 12px; color: #999; margin-top: 20px;">💡 Tap to reveal answer</div>' : ''}
+                    </div>
+                    <div class="card-actions">
+                        <button class="action-btn reject-btn" title="Reject (← or Left Arrow)">✕</button>
+                        <button class="action-btn like-btn" title="Like (→ or Right Arrow)">♥</button>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            renderEmptyState() {
+                const cardStack = document.getElementById('cardStack');
+                const hint = cardStack.querySelector('.swipe-hint');
+                const celebration = cardStack.querySelector('.completion-celebration');
+                
+                cardStack.innerHTML = '';
+                cardStack.appendChild(hint);
+                cardStack.appendChild(celebration);
+
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <div class="empty-state-icon">📱</div>
+                    <div class="empty-state-text">No cards available</div>
+                    <button class="btn btn-primary" onclick="openAddCardModal()">Add Your First Card</button>
+                `;
+                
+                cardStack.appendChild(emptyState);
+            }
+
+            updateStats() {
+                document.getElementById('cardsReviewed').textContent = this.stats.cardsReviewed;
+                document.getElementById('likedCount').textContent = this.stats.liked;
+                document.getElementById('rejectedCount').textContent = this.stats.rejected;
+                document.getElementById('remainingCount').textContent = Math.max(0, this.currentCards.length - this.cardIndex);
+                
+                const progress = this.currentCards.length > 0 
+                    ? (this.cardIndex / this.currentCards.length) * 100 
+                    : 0;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+            }
+
+            updateRecentActions() {
+                const list = document.getElementById('recentActionsList');
+                list.innerHTML = '';
+                
+                this.recentActions.forEach(action => {
+                    const item = document.createElement('div');
+                    item.className = 'action-item';
+                    item.innerHTML = `
+                        <div class="action-icon ${action.action}">
+                            ${action.action === 'like' ? '♥' : '✕'}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600;">${action.card}</div>
+                            <div style="font-size: 12px; color: #666;">${this.formatTime(action.timestamp)}</div>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+
+            updateDeckSelector() {
+                const selector = document.getElementById('deckSelector');
+                selector.innerHTML = '<option value="">Select Deck</option>';
+                
+                this.decks.forEach(deck => {
+                    const option = document.createElement('option');
+                    option.value = deck.id;
+                    option.textContent = `${deck.name} (${deck.cards.length} cards)`;
+                    selector.appendChild(option);
+                });
+            }
+
+            handleCreateDeck(e) {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const selectedType = document.querySelector('.deck-type-option.selected');
+                
+                const newDeck = {
+                    id: this.generateId(),
+                    name: document.getElementById('deckName').value,
+                    type: selectedType.dataset.type,
+                    cards: []
+                };
+
+                this.decks.push(newDeck);
+                this.saveDecks();
+                this.updateDeckSelector();
+                this.closeModal('createDeckModal');
+                this.loadDeck(newDeck.id);
+                
+                e.target.reset();
+            }
+
+            handleAddCard(e) {
+                e.preventDefault();
+                
+                if (!this.currentDeck) {
+                    alert('Please select a deck first');
+                    return;
+                }
+
+                const front = document.getElementById('cardFront').value;
+                const back = document.getElementById('cardBack').value;
+
+                const newCard = { front, back };
+                this.currentDeck.cards.push(newCard);
+                this.currentCards.push(newCard);
+                
+                this.saveDecks();
+                this.updateDeckSelector();
+                this.updateCardList();
+                this.renderCurrentCard();
+                this.updateStats();
+                
+                document.getElementById('cardFront').value = '';
+                document.getElementById('cardBack').value = '';
+            }
+
+            updateCardList() {
+                const cardList = document.getElementById('cardList');
+                cardList.innerHTML = '';
+                
+                if (!this.currentDeck || !this.currentDeck.cards.length) {
+                    cardList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">No cards in this deck</div>';
+                    return;
+                }
+
+                this.currentDeck.cards.forEach((card, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'card-list-item';
+                    item.innerHTML = `
+                        <div>
+                            <div style="font-weight: 600;">${card.front.substring(0, 40)}${card.front.length > 40 ? '...' : ''}</div>
+                            ${card.back ? `<div style="font-size: 12px; color: #666;">${card.back.substring(0, 30)}${card.back.length > 30 ? '...' : ''}</div>` : ''}
+                        </div>
+                        <button class="delete-card-btn" onclick="swipeEngine.deleteCard(${index})">Delete</button>
+                    `;
+                    cardList.appendChild(item);
+                });
+            }
+
+            deleteCard(index) {
+                if (!this.currentDeck) return;
+                
+                this.currentDeck.cards.splice(index, 1);
+                this.currentCards = [...this.currentDeck.cards];
+                
+                if (this.cardIndex >= this.currentCards.length) {
+                    this.cardIndex = Math.max(0, this.currentCards.length - 1);
+                }
+                
+                this.saveDecks();
+                this.updateDeckSelector();
+                this.updateCardList();
+                this.renderCurrentCard();
+                this.updateStats();
+            }
+
+            generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+
+            formatTime(date) {
+                const now = new Date();
+                const diff = now - date;
+                const seconds = Math.floor(diff / 1000);
+                
+                if (seconds < 60) return 'Just now';
+                if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+                if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+                return `${Math.floor(seconds / 86400)}d ago`;
+            }
+
+            loadDecks() {
+                const saved = localStorage.getItem('swipeDecks');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            saveDecks() {
+                localStorage.setItem('swipeDecks', JSON.stringify(this.decks));
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            }
+        }
+
+        // Global functions for HTML onclick handlers
+        function openCreateDeckModal() {
+            document.getElementById('createDeckModal').style.display = 'flex';
+        }
+
+        function openAddCardModal() {
+            if (!swipeEngine.currentDeck) {
+                alert('Please select or create a deck first');
+                return;
+            }
+            swipeEngine.updateCardList();
+            document.getElementById('addCardModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Initialize the application
+        const swipeEngine = new SwipeCardEngine();
+
+        // PWA-like features
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Service worker registration would go here for PWA functionality
+            });
+        }
+
+        // Prevent context menu on cards for better mobile experience
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.swipe-card')) {
+                e.preventDefault();
+            }
+        });
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                swipeEngine.renderCurrentCard();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
