@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipeFlow - Professional Card Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0.5));
+            transition: width 0.3s ease;
+        }
+
+        .logo:hover::after {
+            width: 100%;
+        }
+
+        .logo:hover {
+            transform: translateY(-1px);
+            text-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 20px;
+            padding: 2rem;
+            height: fit-content;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .deck-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .deck-option {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .deck-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .deck-option:hover::before {
+            left: 100%;
+        }
+
+        .deck-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(8px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .deck-option.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateX(4px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .deck-option.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.5));
+            border-radius: 0 2px 2px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1.25rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Card Area */
+        .card-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .card-stack {
+            position: relative;
+            width: 350px;
+            height: 500px;
+            margin: 2rem 0;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.15),
+                0 12px 25px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            cursor: grab;
+            user-select: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+        }
+
+        .card:active {
+            cursor: grabbing;
+        }
+
+        .card.dragging {
+            transition: none;
+            z-index: 10;
+            box-shadow: 
+                0 35px 70px rgba(0, 0, 0, 0.25),
+                0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .card:not(.dragging):nth-child(1) {
+            z-index: 3;
+            transform: scale(1) translateY(0px) rotateX(0deg);
+        }
+
+        .card:not(.dragging):nth-child(2) {
+            z-index: 2;
+            transform: scale(0.96) translateY(8px) rotateX(-2deg);
+            opacity: 0.85;
+        }
+
+        .card:not(.dragging):nth-child(3) {
+            z-index: 1;
+            transform: scale(0.92) translateY(16px) rotateX(-4deg);
+            opacity: 0.7;
+        }
+
+        .card:hover:not(.dragging) {
+            transform: scale(1.02) translateY(-5px);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.2),
+                0 15px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-content {
+            padding: 2.5rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+            color: #1a1a1a;
+            line-height: 1.3;
+            letter-spacing: -0.5px;
+        }
+
+        .card-description {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+        }
+
+        .card-category {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 25px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.15),
+                0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-btn:hover::before {
+            opacity: 1;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-4px) scale(1.1);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.2),
+                0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-btn:active {
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .btn-reject {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-reject:hover {
+            box-shadow: 
+                0 15px 35px rgba(255, 107, 107, 0.4),
+                0 8px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-favorite {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            width: 80px;
+            height: 80px;
+        }
+
+        .btn-favorite:hover {
+            box-shadow: 
+                0 15px 35px rgba(78, 205, 196, 0.4),
+                0 8px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .btn-accept {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-accept:hover {
+            box-shadow: 
+                0 15px 35px rgba(81, 207, 102, 0.4),
+                0 8px 20px rgba(81, 207, 102, 0.3);
+        }
+
+        /* Swipe Indicators */
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 1.2rem 2.5rem;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 1.4rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .swipe-indicator.left {
+            left: 30px;
+            background: rgba(255, 107, 107, 0.95);
+            color: white;
+        }
+
+        .swipe-indicator.right {
+            right: 30px;
+            background: rgba(81, 207, 102, 0.95);
+            color: white;
+        }
+
+        /* Custom Deck Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 2.5rem;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.3),
+                0 12px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 
+                0 0 0 3px rgba(102, 126, 234, 0.1),
+                0 4px 15px rgba(102, 126, 234, 0.15);
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-1px);
+        }
+
+        .form-input::placeholder {
+            color: #a0aec0;
+            font-weight: 400;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .card-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .card-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-item:last-child {
+            border-bottom: none;
+        }
+
+        .delete-card-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            position: relative;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #51cf66 0%, #4ecdc4 50%, #667eea 100%);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .sidebar {
+                width: 100%;
+                margin-bottom: 1rem;
+                padding: 1.5rem;
+            }
+
+            .card-stack {
+                width: 320px;
+                height: 480px;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .nav-controls {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.85rem;
+            }
+
+            .action-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .btn-favorite {
+                width: 70px;
+                height: 70px;
+            }
+
+            .card-content {
+                padding: 2rem 1.5rem;
+            }
+
+            .card-title {
+                font-size: 1.3rem;
+            }
+
+            .card-description {
+                font-size: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+            }
+
+            .swipe-indicator {
+                padding: 0.8rem 1.5rem;
+                font-size: 1.1rem;
+                left: 20px;
+                right: 20px;
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+
+            .card-stack {
+                width: 280px;
+                height: 420px;
+            }
+
+            .sidebar {
+                padding: 1rem;
+            }
+
+            .deck-option {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            .stat-number {
+                font-size: 1.3rem;
+            }
+
+            .stat-label {
+                font-size: 0.75rem;
+            }
+
+            .action-buttons {
+                gap: 1rem;
+            }
+
+            .action-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+            }
+
+            .btn-favorite {
+                width: 60px;
+                height: 60px;
+            }
+        }
+
+        /* High-end device optimizations */
+        @media (min-width: 1200px) {
+            .main-content {
+                max-width: 1400px;
+            }
+
+            .card-stack {
+                width: 380px;
+                height: 550px;
+            }
+
+            .sidebar {
+                width: 320px;
+            }
+
+            .action-btn {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+
+            .btn-favorite {
+                width: 90px;
+                height: 90px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+                color: white;
+            }
+
+            .card-title {
+                color: #f7fafc;
+            }
+
+            .card-description {
+                color: #cbd5e0;
+            }
+
+            .modal-content {
+                background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
+                color: white;
+            }
+
+            .form-input {
+                background: rgba(45, 55, 72, 0.8);
+                border-color: #4a5568;
+                color: white;
+            }
+
+            .form-input:focus {
+                border-color: #667eea;
+                background: rgba(45, 55, 72, 0.95);
+            }
+
+            .form-label,
+            .modal-title {
+                color: #f7fafc;
+            }
+        }
+
+        /* Animations */
+        @keyframes cardFlipIn {
+            from {
+                transform: rotateY(-90deg) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: rotateY(0deg) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                transform: translateY(50px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .card.new {
+            animation: cardSlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar {
+            animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-area {
+            animation: slideInFromRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .action-buttons {
+            animation: slideInFromRight 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Loading States */
+        .loading {
+            animation: pulse 2s infinite;
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 4rem 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: cardSlideIn 0.8s ease;
+        }
+
+        .empty-state h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.95;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .empty-state p {
+            opacity: 0.8;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* Micro-interactions */
+        .btn:hover {
+            animation: none;
+        }
+
+        .deck-option:hover {
+            animation: none;
+        }
+
+        .stat-card:hover .stat-number {
+            animation: pulse 1s ease-in-out;
+        }
+
+        /* Glassmorphism enhancements */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom scrollbar */
+        .modal-content::-webkit-scrollbar,
+        .card-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-content::-webkit-scrollbar-track,
+        .card-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb,
+        .card-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover,
+        .card-list::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+        }
+        /* Progress Bar */
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            position: relative;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <a href="#" class="logo">SwipeFlow</a>
+                <div class="nav-controls">
+                    <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+                    <button class="btn btn-primary" id="createDeckBtn">+ Create Deck</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">🎯 Select Deck</h3>
+                    <div class="deck-selector" id="deckSelector">
+                        <div class="deck-option active" data-deck="startup">
+                            💡 Startup Ideas
+                        </div>
+                        <div class="deck-option" data-deck="affirmations">
+                            ✨ Daily Affirmations
+                        </div>
+                        <div class="deck-option" data-deck="flashcards">
+                            🧠 Study Cards
+                        </div>
+                        <div class="deck-option" data-deck="quotes">
+                            💭 Inspirational Quotes
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">📊 Progress</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalCards">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="remainingCards">0</div>
+                            <div class="stat-label">Remaining</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="acceptedCards">0</div>
+                            <div class="stat-label">Accepted</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="rejectedCards">0</div>
+                            <div class="stat-label">Rejected</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Card Area -->
+            <main class="card-area">
+                <div class="card-stack" id="cardStack">
+                    <div class="swipe-indicator left">PASS</div>
+                    <div class="swipe-indicator right">LIKE</div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn btn-reject" id="rejectBtn">✕</button>
+                    <button class="action-btn btn-favorite" id="favoriteBtn">⭐</button>
+                    <button class="action-btn btn-accept" id="acceptBtn">♥</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Custom Deck Modal -->
+    <div class="modal" id="customDeckModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create Custom Deck</h2>
+                <button class="close-btn" id="closeModalBtn">×</button>
+            </div>
+            
+            <form id="customDeckForm">
+                <div class="form-group">
+                    <label class="form-label">Deck Name</label>
+                    <input type="text" class="form-input" id="deckName" placeholder="My Awesome Deck" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Card Title</label>
+                    <input type="text" class="form-input" id="cardTitle" placeholder="Card title">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Card Description</label>
+                    <textarea class="form-input form-textarea" id="cardDescription" placeholder="Card description"></textarea>
+                </div>
+                
+                <button type="button" class="btn btn-primary" id="addCardBtn">Add Card</button>
+                
+                <div class="form-group">
+                    <label class="form-label">Cards in Deck</label>
+                    <div class="card-list" id="cardList"></div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Deck</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class SwipeCardEngine {
+            constructor() {
+                this.currentDeck = 'startup';
+                this.currentCards = [];
+                this.cardIndex = 0;
+                this.stats = {
+                    total: 0,
+                    accepted: 0,
+                    rejected: 0,
+                    remaining: 0
+                };
+                this.customDecks = new Map();
+                this.isDragging = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.currentX = 0;
+                this.currentY = 0;
+                
+                this.initializeDecks();
+                this.initializeEventListeners();
+                this.loadDeck(this.currentDeck);
+            }
+
+            initializeDecks() {
+                this.decks = {
+                    startup: [
+                        {
+                            title: "AI-Powered Personal Fitness Coach",
+                            description: "An app that uses computer vision to analyze workout form and provides real-time feedback for home workouts.",
+                            category: "AI/Health"
+                        },
+                        {
+                            title: "Sustainable Fashion Marketplace",
+                            description: "A platform connecting eco-conscious consumers with sustainable fashion brands and second-hand luxury items.",
+                            category: "E-commerce"
+                        },
+                        {
+                            title: "Remote Team Bonding Platform",
+                            description: "Virtual reality experiences designed to help remote teams build stronger relationships through shared activities.",
+                            category: "VR/HR"
+                        },
+                        {
+                            title: "Micro-Learning Language Exchange",
+                            description: "5-minute daily language lessons paired with native speakers for practice via video chat.",
+                            category: "Education"
+                        },
+                        {
+                            title: "Smart Home Energy Optimizer",
+                            description: "IoT system that learns your habits and automatically adjusts appliances to minimize energy consumption.",
+                            category: "IoT/Green"
+                        },
+                        {
+                            title: "Freelancer Financial Management",
+                            description: "All-in-one platform for freelancers to manage invoices, taxes, and retirement planning with AI insights.",
+                            category: "Fintech"
+                        }
+                    ],
+                    affirmations: [
+                        {
+                            title: "Daily Confidence Boost",
+                            description: "I am capable of achieving amazing things today. My unique perspective and skills make me valuable.",
+                            category: "Confidence"
+                        },
+                        {
+                            title: "Embrace Growth",
+                            description: "Every challenge I face is an opportunity to grow stronger and wiser. I welcome new experiences.",
+                            category: "Growth"
+                        },
+                        {
+                            title: "Inner Peace",
+                            description: "I choose to let go of things beyond my control and focus my energy on what I can influence.",
+                            category: "Mindfulness"
+                        },
+                        {
+                            title: "Creative Flow",
+                            description: "My creativity flows freely and abundantly. I trust my intuition to guide me to innovative solutions.",
+                            category: "Creativity"
+                        },
+                        {
+                            title: "Gratitude Practice",
+                            description: "I am grateful for the abundance in my life. Every day brings new reasons to appreciate my journey.",
+                            category: "Gratitude"
+                        },
+                        {
+                            title: "Resilience Reminder",
+                            description: "I have overcome challenges before, and I have the strength to overcome whatever comes my way.",
+                            category: "Strength"
+                        }
+                    ],
+                    flashcards: [
+                        {
+                            title: "JavaScript Closures",
+                            description: "A closure is a function that has access to variables in its outer (enclosing) scope even after the outer function has returned.",
+                            category: "Programming"
+                        },
+                        {
+                            title: "CSS Flexbox",
+                            description: "display: flex creates a flex container. Use justify-content for main axis alignment and align-items for cross axis alignment.",
+                            category: "Web Dev"
+                        },
+                        {
+                            title: "HTTP Status Codes",
+                            description: "200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized), 404 (Not Found), 500 (Server Error).",
+                            category: "Web Dev"
+                        },
+                        {
+                            title: "Big O Notation",
+                            description: "Describes algorithm efficiency: O(1) constant, O(log n) logarithmic, O(n) linear, O(n²) quadratic.",
+                            category: "Algorithms"
+                        },
+                        {
+                            title: "Git Commands",
+                            description: "git add . (stage all), git commit -m 'message', git push origin main, git pull, git branch -b new-branch",
+                            category: "Tools"
+                        },
+                        {
+                            title: "Database Normalization",
+                            description: "1NF: Atomic values, 2NF: No partial dependencies, 3NF: No transitive dependencies. Reduces redundancy.",
+                            category: "Database"
+                        }
+                    ],
+                    quotes: [
+                        {
+                            title: "Innovation Mindset",
+                            description: "\"The way to get started is to quit talking and begin doing.\" - Walt Disney",
+                            category: "Motivation"
+                        },
+                        {
+                            title: "Embrace Failure",
+                            description: "\"I have not failed. I've just found 10,000 ways that won't work.\" - Thomas Edison",
+                            category: "Persistence"
+                        },
+                        {
+                            title: "Design Philosophy",
+                            description: "\"Simplicity is the ultimate sophistication.\" - Leonardo da Vinci",
+                            category: "Design"
+                        },
+                        {
+                            title: "Creative Process",
+                            description: "\"Creativity is intelligence having fun.\" - Albert Einstein",
+                            category: "Creativity"
+                        },
+                        {
+                            title: "Leadership Wisdom",
+                            description: "\"The best way to predict the future is to create it.\" - Peter Drucker",
+                            category: "Leadership"
+                        },
+                        {
+                            title: "Growth Mindset",
+                            description: "\"In the middle of difficulty lies opportunity.\" - Albert Einstein",
+                            category: "Opportunity"
+                        }
+                    ]
+                };
+            }
+
+            initializeEventListeners() {
+                // Deck selection
+                document.getElementById('deckSelector').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('deck-option')) {
+                        document.querySelectorAll('.deck-option').forEach(option => {
+                            option.classList.remove('active');
+                        });
+                        e.target.classList.add('active');
+                        this.loadDeck(e.target.dataset.deck);
+                    }
+                });
+
+                // Action buttons
+                document.getElementById('rejectBtn').addEventListener('click', () => this.swipeCard('left'));
+                document.getElementById('acceptBtn').addEventListener('click', () => this.swipeCard('right'));
+                document.getElementById('favoriteBtn').addEventListener('click', () => this.favoriteCard());
+
+                // Reset button
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetDeck());
+
+                // Custom deck modal
+                document.getElementById('createDeckBtn').addEventListener('click', () => this.openCustomDeckModal());
+                document.getElementById('closeModalBtn').addEventListener('click', () => this.closeCustomDeckModal());
+                document.getElementById('cancelBtn').addEventListener('click', () => this.closeCustomDeckModal());
+                document.getElementById('addCardBtn').addEventListener('click', () => this.addCustomCard());
+                document.getElementById('customDeckForm').addEventListener('submit', (e) => this.createCustomDeck(e));
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') this.swipeCard('left');
+                    if (e.key === 'ArrowRight') this.swipeCard('right');
+                    if (e.key === 'ArrowUp') this.favoriteCard();
+                    if (e.key === 'r' || e.key === 'R') this.resetDeck();
+                });
+
+                // Touch and mouse events for dragging
+                this.initializeDragEvents();
+            }
+
+            initializeDragEvents() {
+                const cardStack = document.getElementById('cardStack');
+
+                // Mouse events
+                cardStack.addEventListener('mousedown', (e) => this.handleDragStart(e));
+                document.addEventListener('mousemove', (e) => this.handleDragMove(e));
+                document.addEventListener('mouseup', () => this.handleDragEnd());
+
+                // Touch events
+                cardStack.addEventListener('touchstart', (e) => this.handleDragStart(e.touches[0]), { passive: false });
+                document.addEventListener('touchmove', (e) => this.handleDragMove(e.touches[0]), { passive: false });
+                document.addEventListener('touchend', () => this.handleDragEnd());
+            }
+
+            handleDragStart(e) {
+                const card = e.target.closest('.card');
+                if (!card || card !== document.querySelector('.card')) return;
+
+                this.isDragging = true;
+                this.startX = e.clientX || e.pageX;
+                this.startY = e.clientY || e.pageY;
+                this.currentX = this.startX;
+                this.currentY = this.startY;
+
+                card.classList.add('dragging');
+                e.preventDefault();
+            }
+
+            handleDragMove(e) {
+                if (!this.isDragging) return;
+
+                this.currentX = e.clientX || e.pageX;
+                this.currentY = e.clientY || e.pageY;
+
+                const deltaX = this.currentX - this.startX;
+                const deltaY = this.currentY - this.startY;
+                const rotation = deltaX * 0.1;
+                const opacity = Math.max(0.5, 1 - Math.abs(deltaX) / 300);
+
+                const card = document.querySelector('.card.dragging');
+                if (card) {
+                    card.style.transform = `translateX(${deltaX}px) translateY(${deltaY}px) rotate(${rotation}deg)`;
+                    card.style.opacity = opacity;
+
+                    // Show swipe indicators
+                    const leftIndicator = document.querySelector('.swipe-indicator.left');
+                    const rightIndicator = document.querySelector('.swipe-indicator.right');
+
+                    if (deltaX < -50) {
+                        leftIndicator.style.opacity = Math.min(1, Math.abs(deltaX) / 150);
+                        rightIndicator.style.opacity = 0;
+                    } else if (deltaX > 50) {
+                        rightIndicator.style.opacity = Math.min(1, deltaX / 150);
+                        leftIndicator.style.opacity = 0;
+                    } else {
+                        leftIndicator.style.opacity = 0;
+                        rightIndicator.style.opacity = 0;
+                    }
+                }
+
+                e.preventDefault();
+            }
+
+            handleDragEnd() {
+                if (!this.isDragging) return;
+
+                this.isDragging = false;
+                const deltaX = this.currentX - this.startX;
+                const card = document.querySelector('.card.dragging');
+
+                if (card) {
+                    card.classList.remove('dragging');
+
+                    if (Math.abs(deltaX) > 100) {
+                        // Snap back to center
+                        card.style.transform = '';
+                        card.style.opacity = '';
+                    }
+                }
+
+                // Hide swipe indicators
+                document.querySelector('.swipe-indicator.left').style.opacity = 0;
+                document.querySelector('.swipe-indicator.right').style.opacity = 0;
+            }
+
+            loadDeck(deckName) {
+                this.currentDeck = deckName;
+                
+                if (this.customDecks.has(deckName)) {
+                    this.currentCards = [...this.customDecks.get(deckName)];
+                } else {
+                    this.currentCards = [...this.decks[deckName]];
+                }
+                
+                this.cardIndex = 0;
+                this.stats = {
+                    total: this.currentCards.length,
+                    accepted: 0,
+                    rejected: 0,
+                    remaining: this.currentCards.length
+                };
+                
+                this.updateStats();
+                this.renderCards();
+            }
+
+            renderCards() {
+                const cardStack = document.getElementById('cardStack');
+                const indicators = cardStack.querySelectorAll('.swipe-indicator');
+                cardStack.innerHTML = '';
+                
+                // Re-add indicators
+                indicators.forEach(indicator => cardStack.appendChild(indicator));
+
+                if (this.cardIndex >= this.currentCards.length) {
+                    this.showEmptyState();
+                    return;
+                }
+
+                // Render up to 3 cards
+                for (let i = 0; i < 3; i++) {
+                    const cardData = this.currentCards[this.cardIndex + i];
+                    if (!cardData) break;
+
+                    const cardElement = this.createCardElement(cardData);
+                    if (i === 0) cardElement.classList.add('new');
+                    cardStack.appendChild(cardElement);
+                }
+            }
+
+            createCardElement(cardData) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                card.innerHTML = `
+                    <div class="card-category">${cardData.category}</div>
+                    <div class="card-content">
+                        <h3 class="card-title">${cardData.title}</h3>
+                        <p class="card-description">${cardData.description}</p>
+                    </div>
+                `;
+                
+                return card;
+            }
+
+            swipeCard(direction) {
+                if (this.cardIndex >= this.currentCards.length) return;
+
+                const card = document.querySelector('.card');
+                if (!card) return;
+
+                // Update stats
+                if (direction === 'right') {
+                    this.stats.accepted++;
+                } else if (direction === 'left') {
+                    this.stats.rejected++;
+                }
+                
+                this.stats.remaining--;
+                this.updateStats();
+
+                // Animate card out
+                const translateX = direction === 'right' ? '100vw' : '-100vw';
+                const rotation = direction === 'right' ? '30deg' : '-30deg';
+                
+                card.style.transition = 'all 0.3s ease';
+                card.style.transform = `translateX(${translateX}) rotate(${rotation})`;
+                card.style.opacity = '0';
+
+                setTimeout(() => {
+                    this.cardIndex++;
+                    this.renderCards();
+                }, 300);
+            }
+
+            favoriteCard() {
+                if (this.cardIndex >= this.currentCards.length) return;
+
+                const card = document.querySelector('.card');
+                if (!card) return;
+
+                // Add favorite animation
+                card.style.transition = 'all 0.3s ease';
+                card.style.transform = 'scale(1.1) rotate(5deg)';
+                
+                setTimeout(() => {
+                    card.style.transform = 'scale(1) rotate(0deg)';
+                    // You could implement favorite storage here
+                    this.swipeCard('right');
+                }, 300);
+            }
+
+            resetDeck() {
+                this.cardIndex = 0;
+                this.stats = {
+                    total: this.currentCards.length,
+                    accepted: 0,
+                    rejected: 0,
+                    remaining: this.currentCards.length
+                };
+                this.updateStats();
+                this.renderCards();
+            }
+
+            updateStats() {
+                document.getElementById('totalCards').textContent = this.stats.total;
+                document.getElementById('remainingCards').textContent = this.stats.remaining;
+                document.getElementById('acceptedCards').textContent = this.stats.accepted;
+                document.getElementById('rejectedCards').textContent = this.stats.rejected;
+
+                // Update progress bar
+                const progress = this.stats.total > 0 ? 
+                    ((this.stats.total - this.stats.remaining) / this.stats.total) * 100 : 0;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+            }
+
+            showEmptyState() {
+                const cardStack = document.getElementById('cardStack');
+                const indicators = cardStack.querySelectorAll('.swipe-indicator');
+                cardStack.innerHTML = '';
+                
+                // Re-add indicators
+                indicators.forEach(indicator => cardStack.appendChild(indicator));
+
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <h3>🎉 Deck Complete!</h3>
+                    <p>You've gone through all the cards in this deck.</p>
+                    <button class="btn btn-primary" onclick="app.resetDeck()">Start Over</button>
+                `;
+                cardStack.appendChild(emptyState);
+            }
+
+            // Custom Deck Management
+            openCustomDeckModal() {
+                document.getElementById('customDeckModal').classList.add('active');
+                document.getElementById('deckName').focus();
+            }
+
+            closeCustomDeckModal() {
+                document.getElementById('customDeckModal').classList.remove('active');
+                this.clearCustomDeckForm();
+            }
+
+            clearCustomDeckForm() {
+                document.getElementById('deckName').value = '';
+                document.getElementById('cardTitle').value = '';
+                document.getElementById('cardDescription').value = '';
+                document.getElementById('cardList').innerHTML = '';
+                this.tempCustomCards = [];
+            }
+
+            addCustomCard() {
+                const title = document.getElementById('cardTitle').value.trim();
+                const description = document.getElementById('cardDescription').value.trim();
+
+                if (!title || !description) {
+                    alert('Please fill in both title and description');
+                    return;
+                }
+
+                if (!this.tempCustomCards) this.tempCustomCards = [];
+
+                const card = {
+                    title,
+                    description,
+                    category: 'Custom'
+                };
+
+                this.tempCustomCards.push(card);
+                this.updateCustomCardList();
+
+                // Clear form fields
+                document.getElementById('cardTitle').value = '';
+                document.getElementById('cardDescription').value = '';
+                document.getElementById('cardTitle').focus();
+            }
+
+            updateCustomCardList() {
+                const cardList = document.getElementById('cardList');
+                cardList.innerHTML = '';
+
+                this.tempCustomCards.forEach((card, index) => {
+                    const cardItem = document.createElement('div');
+                    cardItem.className = 'card-item';
+                    cardItem.innerHTML = `
+                        <div>
+                            <strong>${card.title}</strong><br>
+                            <small>${card.description.substring(0, 50)}${card.description.length > 50 ? '...' : ''}</small>
+                        </div>
+                        <button class="delete-card-btn" onclick="app.removeCustomCard(${index})">Delete</button>
+                    `;
+                    cardList.appendChild(cardItem);
+                });
+            }
+
+            removeCustomCard(index) {
+                this.tempCustomCards.splice(index, 1);
+                this.updateCustomCardList();
+            }
+
+            createCustomDeck(e) {
+                e.preventDefault();
+                
+                const deckName = document.getElementById('deckName').value.trim();
+                
+                if (!deckName) {
+                    alert('Please enter a deck name');
+                    return;
+                }
+
+                if (!this.tempCustomCards || this.tempCustomCards.length === 0) {
+                    alert('Please add at least one card to the deck');
+                    return;
+                }
+
+                // Store custom deck
+                const deckKey = deckName.toLowerCase().replace(/\s+/g, '_');
+                this.customDecks.set(deckKey, [...this.tempCustomCards]);
+
+                // Add to deck selector
+                const deckSelector = document.getElementById('deckSelector');
+                const deckOption = document.createElement('div');
+                deckOption.className = 'deck-option';
+                deckOption.dataset.deck = deckKey;
+                deckOption.innerHTML = `🎯 ${deckName}`;
+                deckSelector.appendChild(deckOption);
+
+                // Load the new deck
+                document.querySelectorAll('.deck-option').forEach(option => {
+                    option.classList.remove('active');
+                });
+                deckOption.classList.add('active');
+                this.loadDeck(deckKey);
+
+                // Close modal
+                this.closeCustomDeckModal();
+            }
+        }
+
+        // Initialize the app
+        const app = new SwipeCardEngine();
+
+        // Global functions for inline event handlers
+        window.app = app;
+
+        // Add some visual polish with CSS animations
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add subtle animations to buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-1px)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Add loading animation
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        // Add keyboard shortcut hints
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '?') {
+                alert(`Keyboard Shortcuts:
+                
+← Left Arrow: Reject card
+→ Right Arrow: Accept card  
+↑ Up Arrow: Favorite card
+R: Reset deck
+?: Show this help`);
+            }
+        });
+
+        // Performance optimization: Preload next deck
+        const preloadDeck = (deckName) => {
+            if (app.decks[deckName]) {
+                // Preload images or other resources if needed
+                console.log(`Preloading deck: ${deckName}`);
+            }
+        };
+
+        // Add smooth scrolling for mobile
+        if ('ontouchstart' in window) {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        }
+    </script>
+</body>
+</html>
