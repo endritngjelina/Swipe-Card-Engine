@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipeFlow - Professional Card Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #333;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="0.5" fill="white" opacity="0.05"/><circle cx="75" cy="75" r="0.3" fill="white" opacity="0.03"/><circle cx="50" cy="10" r="0.4" fill="white" opacity="0.04"/><circle cx="10" cy="60" r="0.2" fill="white" opacity="0.02"/><circle cx="90" cy="30" r="0.6" fill="white" opacity="0.06"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 24px;
+            overflow-y: auto;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.5);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .logo span {
+            font-size: 28px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            60% { transform: translateY(-4px); }
+        }
+
+        .deck-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2d3748;
+        }
+
+        .deck-item {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .deck-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .deck-item:hover::before {
+            left: 100%;
+        }
+
+        .deck-item:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .deck-item.active {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .deck-item.active::after {
+            content: '✓';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .deck-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .deck-count {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .create-deck-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .create-deck-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .create-deck-btn:hover::before {
+            left: 100%;
+        }
+
+        .create-deck-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(45deg, #5a6fd8, #6b42a1);
+        }
+
+        .create-deck-btn:active {
+            transform: translateY(-1px) scale(1.01);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            padding: 24px 32px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            border-radius: 1px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .header-title::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -10px;
+            right: -10px;
+            bottom: -5px;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: 8px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .header-title:hover::before {
+            opacity: 1;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .toggle-sidebar {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toggle-sidebar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-sidebar:hover::before {
+            width: 40px;
+            height: 40px;
+        }
+
+        .toggle-sidebar:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .stat-item:hover::before {
+            left: 100%;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: 700;
+            display: block;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Card Container */
+        .card-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .card-stack {
+            position: relative;
+            width: 350px;
+            height: 500px;
+            perspective: 1000px;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+            transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+            transform-origin: center bottom;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 48%, rgba(255, 255, 255, 0.05) 49%, rgba(255, 255, 255, 0.05) 51%, transparent 52%);
+            transform: rotate(-45deg);
+            transition: transform 2s ease;
+        }
+
+        .card:hover::after {
+            transform: rotate(-45deg) translate(50%, 50%);
+        }
+
+        .card:active {
+            cursor: grabbing;
+        }
+
+        .card.dragging {
+            z-index: 1000;
+            transition: none;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .card.swiped-left {
+            transform: translateX(-200%) rotate(-30deg);
+            opacity: 0;
+        }
+
+        .card.swiped-right {
+            transform: translateX(200%) rotate(30deg);
+            opacity: 0;
+        }
+
+        .card.swiped-up {
+            transform: translateY(-200%) rotate(15deg) scale(1.1);
+            opacity: 0;
+        }
+
+        .card-content {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #2d3748;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1a202c;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-category {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 3;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            backdrop-filter: blur(10px);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 32px;
+        }
+
+        .action-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.4s ease;
+        }
+
+        .action-btn:hover::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-4px) scale(1.1);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn:active {
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .reject-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .reject-btn:hover {
+            background: linear-gradient(45deg, #ff5252, #e53e3e);
+        }
+
+        .super-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .super-btn:hover {
+            background: linear-gradient(45deg, #38b2ac, #3d9970);
+        }
+
+        .like-btn {
+            background: linear-gradient(45deg, #51cf66, #40c057);
+            color: white;
+        }
+
+        .like-btn:hover {
+            background: linear-gradient(45deg, #47cc5e, #38a169);
+        }
+
+        /* Swipe Indicators */
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 18px;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .swipe-indicator.left {
+            left: 20px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .swipe-indicator.right {
+            right: 20px;
+            background: rgba(81, 207, 102, 0.9);
+            color: white;
+            box-shadow: 0 8px 20px rgba(81, 207, 102, 0.3);
+        }
+
+        .swipe-indicator.up {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(78, 205, 196, 0.9);
+            color: white;
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.3);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 60px 40px;
+            position: relative;
+        }
+
+        .empty-state::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+        }
+
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            opacity: 0.7;
+            position: relative;
+            z-index: 2;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .empty-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-description {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 32px;
+            position: relative;
+            z-index: 2;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .restart-btn {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .restart-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .restart-btn:hover::before {
+            left: 100%;
+        }
+
+        .restart-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            transform: translateY(30px) scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #1a202c;
+            position: relative;
+            padding-bottom: 12px;
+        }
+
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.8);
+            position: relative;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: #a0aec0;
+            transition: color 0.3s ease;
+        }
+
+        .form-input:focus::placeholder, .form-textarea:focus::placeholder {
+            color: #cbd5e0;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+            position: relative;
+        }
+
+        .form-label::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .form-group:focus-within .form-label::before {
+            opacity: 1;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 32px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.4s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+            border: 2px solid transparent;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6b42a1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .card-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .card-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f7fafc;
+        }
+
+        .card-item:last-child {
+            border-bottom: none;
+        }
+
+        .delete-card-btn {
+            background: #fed7d7;
+            color: #c53030;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                height: 100%;
+                z-index: 1001;
+            }
+
+            .card-stack {
+                width: 280px;
+                height: 400px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .header {
+                padding: 16px 20px;
+            }
+
+            .card-container {
+                padding: 20px;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .card {
+            animation: slideIn 0.5s ease;
+        }
+
+        /* Card Stack Effect */
+        .card:nth-child(1) { 
+            z-index: 3; 
+            transform: scale(1) translateY(0);
+        }
+        .card:nth-child(2) { 
+            z-index: 2; 
+            transform: scale(0.95) translateY(10px);
+            opacity: 0.8;
+            filter: brightness(0.95);
+        }
+        .card:nth-child(3) { 
+            z-index: 1; 
+            transform: scale(0.9) translateY(20px);
+            opacity: 0.6;
+            filter: brightness(0.9);
+        }
+
+        /* Loading Animation */
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+
+        .loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Success State */
+        .success-state {
+            animation: slideInFromBottom 0.5s ease-out;
+        }
+
+        @keyframes slideInFromBottom {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Enhanced Scrollbar for all scrollable areas */
+        .card-list::-webkit-scrollbar,
+        .form-textarea::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-list::-webkit-scrollbar-track,
+        .form-textarea::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 3px;
+        }
+
+        .card-list::-webkit-scrollbar-thumb,
+        .form-textarea::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+            transition: background 0.3s ease;
+        }
+
+        .card-list::-webkit-scrollbar-thumb:hover,
+        .form-textarea::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.5);
+        }
+
+        /* Tooltip Enhancement */
+        [title] {
+            position: relative;
+            cursor: help;
+        }
+
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: #9ca3af; /* or any appropriate color */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo">
+                <span>🚀</span> SwipeFlow
+            </div>
+            
+            <div class="deck-section">
+                <h3 class="section-title">My Decks</h3>
+                <div id="deckList"></div>
+                <button class="create-deck-btn" onclick="showCreateDeckModal()">
+                    + Create New Deck
+                </button>
+            </div>
+
+            <div class="deck-section">
+                <h3 class="section-title">Quick Actions</h3>
+                <button class="create-deck-btn" onclick="exportDecks()" style="background: linear-gradient(45deg, #4ecdc4, #44a08d); margin-bottom: 12px;">
+                    📤 Export Decks
+                </button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importDecks(event)">
+                <button class="create-deck-btn" onclick="document.getElementById('importFile').click()" style="background: linear-gradient(45deg, #ffa726, #ff7043);">
+                    📥 Import Decks
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+                <h1 class="header-title" id="headerTitle">Select a Deck</h1>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalCards">0</span>
+                        <span>Total</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="remainingCards">0</span>
+                        <span>Remaining</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="swipedCards">0</span>
+                        <span>Swiped</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-container" id="cardContainer">
+                <div class="empty-state">
+                    <div class="empty-icon">📱</div>
+                    <h2 class="empty-title">Welcome to SwipeFlow</h2>
+                    <p class="empty-description">Create your first deck to start swiping through your ideas, flashcards, or anything else!</p>
+                </div>
+            </div>
+
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button class="action-btn reject-btn" onclick="swipeCard('left')" title="Reject (←)">✗</button>
+                <button class="action-btn super-btn" onclick="swipeCard('up')" title="Super Like (↑)">★</button>
+                <button class="action-btn like-btn" onclick="swipeCard('right')" title="Like (→)">♥</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Deck Modal -->
+    <div class="modal" id="createDeckModal">
+        <div class="modal-content">
+            <h2 class="modal-header">Create New Deck</h2>
+            <form id="createDeckForm">
+                <div class="form-group">
+                    <label class="form-label">Deck Name</label>
+                    <input type="text" class="form-input" id="deckName" placeholder="Enter deck name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="deckDescription" placeholder="Brief description of your deck"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-input" id="deckCategory">
+                        <option value="Personal">Personal</option>
+                        <option value="Business">Business</option>
+                        <option value="Education">Education</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Health">Health</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cards (one per line)</label>
+                    <textarea class="form-textarea" id="deckCards" placeholder="Enter each card content on a new line..." style="min-height: 120px;"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="hideCreateDeckModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Deck</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Deck Modal -->
+    <div class="modal" id="editDeckModal">
+        <div class="modal-content">
+            <h2 class="modal-header">Edit Deck</h2>
+            <form id="editDeckForm">
+                <div class="form-group">
+                    <label class="form-label">Deck Name</label>
+                    <input type="text" class="form-input" id="editDeckName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="editDeckDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-input" id="editDeckCategory">
+                        <option value="Personal">Personal</option>
+                        <option value="Business">Business</option>
+                        <option value="Education">Education</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Health">Health</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cards</label>
+                    <div class="card-list" id="editCardsList"></div>
+                    <textarea class="form-textarea" id="editNewCards" placeholder="Add new cards (one per line)..." style="margin-top: 12px;"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="deleteDeck()" style="background: #fed7d7; color: #c53030; margin-right: auto;">Delete Deck</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditDeckModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        class SwipeCardEngine {
+            constructor() {
+                this.decks = JSON.parse(localStorage.getItem('swipeDecks') || '[]');
+                this.currentDeck = null;
+                this.currentCards = [];
+                this.currentCardIndex = 0;
+                this.swipeStats = { total: 0, swiped: 0, remaining: 0 };
+                this.editingDeckId = null;
+                
+                this.initializeDefaultDecks();
+                this.setupEventListeners();
+                this.renderDecks();
+                this.setupKeyboardControls();
+            }
+
+            initializeDefaultDecks() {
+                if (this.decks.length === 0) {
+                    this.decks = [
+                        {
+                            id: 'startup-ideas',
+                            name: 'Startup Ideas',
+                            description: 'Innovative business concepts to explore',
+                            category: 'Business',
+                            cards: [
+                                'AI-powered personal fitness coach that adapts to your lifestyle',
+                                'Sustainable packaging solutions for e-commerce',
+                                'Virtual reality workspace for remote teams',
+                                'Blockchain-based digital identity verification',
+                                'Smart home energy optimization system',
+                                'On-demand mental health support platform',
+                                'Automated meal planning with local ingredient sourcing',
+                                'AR-enhanced online shopping experience'
+                            ],
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'daily-affirmations',
+                            name: 'Daily Affirmations',
+                            description: 'Positive thoughts to start your day',
+                            category: 'Personal',
+                            cards: [
+                                'I am capable of achieving my goals',
+                                'Today is full of possibilities',
+                                'I choose to focus on what I can control',
+                                'I am grateful for the opportunities in my life',
+                                'I have the strength to overcome challenges',
+                                'I am worthy of success and happiness',
+                                'I learn and grow from every experience',
+                                'I trust in my ability to make good decisions'
+                            ],
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'javascript-concepts',
+                            name: 'JavaScript Concepts',
+                            description: 'Key programming concepts to master',
+                            category: 'Education',
+                            cards: [
+                                'Closures: Functions that retain access to outer scope variables',
+                                'Hoisting: Variable and function declarations are moved to the top',
+                                'Event Loop: Mechanism that handles asynchronous operations',
+                                'Prototypal Inheritance: Objects can inherit from other objects',
+                                'Async/Await: Modern way to handle asynchronous operations',
+                                'Destructuring: Extract values from arrays or objects',
+                                'Arrow Functions: Concise function syntax with lexical this',
+                                'Promises: Objects representing eventual completion of operations'
+                            ],
+                            createdAt: new Date().toISOString()
+                        }
+                    ];
+                    this.saveDecks();
+                }
+            }
+
+            setupEventListeners() {
+                // Form submissions
+                document.getElementById('createDeckForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.createDeck();
+                });
+
+                document.getElementById('editDeckForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.updateDeck();
+                });
+
+                // Touch and mouse events for swiping
+                this.setupSwipeEvents();
+            }
+
+            setupKeyboardControls() {
+                document.addEventListener('keydown', (e) => {
+                    if (!this.currentDeck || this.currentCards.length === 0) return;
+                    
+                    switch(e.key) {
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            this.swipeCard('left');
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            this.swipeCard('right');
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            this.swipeCard('up');
+                            break;
+                        case ' ':
+                            e.preventDefault();
+                            this.swipeCard('right');
+                            break;
+                    }
+                });
+            }
+
+            setupSwipeEvents() {
+                let startX, startY, currentX, currentY;
+                let isDragging = false;
+                let currentCard = null;
+
+                const cardContainer = document.getElementById('cardContainer');
+
+                const handleStart = (e) => {
+                    const card = e.target.closest('.card');
+                    if (!card || card.classList.contains('swiped-left') || card.classList.contains('swiped-right') || card.classList.contains('swiped-up')) return;
+
+                    isDragging = true;
+                    currentCard = card;
+                    
+                    const point = e.touches ? e.touches[0] : e;
+                    startX = point.clientX;
+                    startY = point.clientY;
+                    currentX = startX;
+                    currentY = startY;
+
+                    card.classList.add('dragging');
+                };
+
+                const handleMove = (e) => {
+                    if (!isDragging || !currentCard) return;
+                    e.preventDefault();
+
+                    const point = e.touches ? e.touches[0] : e;
+                    currentX = point.clientX;
+                    currentY = point.clientY;
+
+                    const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+                    const rotation = deltaX * 0.1;
+
+                    currentCard.style.transform = `translateX(${deltaX}px) translateY(${deltaY}px) rotate(${rotation}deg)`;
+                    currentCard.style.opacity = Math.max(0.7, 1 - Math.abs(deltaX) / 300);
+
+                    // Show swipe indicators
+                    this.updateSwipeIndicators(deltaX, deltaY);
+                };
+
+                const handleEnd = (e) => {
+                    if (!isDragging || !currentCard) return;
+
+                    isDragging = false;
+                    const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+
+                    currentCard.classList.remove('dragging');
+                    this.hideSwipeIndicators();
+
+                    // Determine swipe direction
+                    if (Math.abs(deltaX) > 100 || Math.abs(deltaY) > 100) {
+                        if (Math.abs(deltaY) > Math.abs(deltaX) && deltaY < -100) {
+                            this.swipeCard('up');
+                        } else if (deltaX > 100) {
+                            this.swipeCard('right');
+                        } else if (deltaX < -100) {
+                            this.swipeCard('left');
+                        } else {
+                            this.resetCardPosition(currentCard);
+                        }
+                    } else {
+                        this.resetCardPosition(currentCard);
+                    }
+
+                    currentCard = null;
+                };
+
+                // Mouse events
+                cardContainer.addEventListener('mousedown', handleStart);
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('mouseup', handleEnd);
+
+                // Touch events
+                cardContainer.addEventListener('touchstart', handleStart);
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('touchend', handleEnd);
+            }
+
+            updateSwipeIndicators(deltaX, deltaY) {
+                const indicators = document.querySelectorAll('.swipe-indicator');
+                indicators.forEach(indicator => indicator.style.opacity = '0');
+
+                if (Math.abs(deltaY) > Math.abs(deltaX) && deltaY < -50) {
+                    const upIndicator = document.querySelector('.swipe-indicator.up');
+                    if (upIndicator) upIndicator.style.opacity = '1';
+                } else if (deltaX > 50) {
+                    const rightIndicator = document.querySelector('.swipe-indicator.right');
+                    if (rightIndicator) rightIndicator.style.opacity = '1';
+                } else if (deltaX < -50) {
+                    const leftIndicator = document.querySelector('.swipe-indicator.left');
+                    if (leftIndicator) leftIndicator.style.opacity = '1';
+                }
+            }
+
+            hideSwipeIndicators() {
+                const indicators = document.querySelectorAll('.swipe-indicator');
+                indicators.forEach(indicator => indicator.style.opacity = '0');
+            }
+
+            resetCardPosition(card) {
+                card.style.transform = '';
+                card.style.opacity = '';
+            }
+
+            createDeck() {
+                const name = document.getElementById('deckName').value.trim();
+                const description = document.getElementById('deckDescription').value.trim();
+                const category = document.getElementById('deckCategory').value;
+                const cardsText = document.getElementById('deckCards').value.trim();
+
+                if (!name || !cardsText) {
+                    alert('Please provide a deck name and at least one card.');
+                    return;
+                }
+
+                const cards = cardsText.split('\n').filter(card => card.trim()).map(card => card.trim());
+                
+                if (cards.length === 0) {
+                    alert('Please add at least one card.');
+                    return;
+                }
+
+                const deck = {
+                    id: Date.now().toString(),
+                    name,
+                    description,
+                    category,
+                    cards,
+                    createdAt: new Date().toISOString()
+                };
+
+                this.decks.push(deck);
+                this.saveDecks();
+                this.renderDecks();
+                this.hideCreateDeckModal();
+
+                // Auto-select the new deck
+                this.selectDeck(deck.id);
+            }
+
+            updateDeck() {
+                if (!this.editingDeckId) return;
+
+                const deck = this.decks.find(d => d.id === this.editingDeckId);
+                if (!deck) return;
+
+                deck.name = document.getElementById('editDeckName').value.trim();
+                deck.description = document.getElementById('editDeckDescription').value.trim();
+                deck.category = document.getElementById('editDeckCategory').value;
+
+                // Add new cards
+                const newCardsText = document.getElementById('editNewCards').value.trim();
+                if (newCardsText) {
+                    const newCards = newCardsText.split('\n').filter(card => card.trim()).map(card => card.trim());
+                    deck.cards.push(...newCards);
+                }
+
+                this.saveDecks();
+                this.renderDecks();
+                this.hideEditDeckModal();
+
+                // Refresh current deck if it's the one being edited
+                if (this.currentDeck && this.currentDeck.id === this.editingDeckId) {
+                    this.selectDeck(this.editingDeckId);
+                }
+            }
+
+            deleteDeck() {
+                if (!this.editingDeckId) return;
+                
+                if (!confirm('Are you sure you want to delete this deck? This action cannot be undone.')) {
+                    return;
+                }
+
+                this.decks = this.decks.filter(d => d.id !== this.editingDeckId);
+                this.saveDecks();
+                this.renderDecks();
+                this.hideEditDeckModal();
+
+                // Clear current deck if it was deleted
+                if (this.currentDeck && this.currentDeck.id === this.editingDeckId) {
+                    this.currentDeck = null;
+                    this.showEmptyState();
+                }
+            }
+
+            selectDeck(deckId) {
+                const deck = this.decks.find(d => d.id === deckId);
+                if (!deck) return;
+
+                this.currentDeck = { ...deck };
+                this.currentCards = [...deck.cards];
+                this.currentCardIndex = 0;
+                this.updateStats();
+                this.renderCards();
+                this.updateActiveState(deckId);
+                
+                document.getElementById('headerTitle').textContent = deck.name;
+                document.getElementById('actionButtons').style.display = 'flex';
+            }
+
+            updateActiveState(activeId) {
+                document.querySelectorAll('.deck-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const activeItem = document.querySelector(`[data-deck-id="${activeId}"]`);
+                if (activeItem) {
+                    activeItem.classList.add('active');
+                }
+            }
+
+            renderDecks() {
+                const deckList = document.getElementById('deckList');
+                deckList.innerHTML = '';
+
+                this.decks.forEach(deck => {
+                    const deckElement = document.createElement('div');
+                    deckElement.className = 'deck-item';
+                    deckElement.dataset.deckId = deck.id;
+                    deckElement.innerHTML = `
+                        <div>
+                            <div class="deck-name">${deck.name}</div>
+                            <div class="deck-count">${deck.cards.length} cards • ${deck.category}</div>
+                        </div>
+                    `;
+                    
+                    deckElement.addEventListener('click', () => this.selectDeck(deck.id));
+                    deckElement.addEventListener('dblclick', () => this.showEditDeckModal(deck.id));
+                    deckList.appendChild(deckElement);
+                });
+            }
+
+            renderCards() {
+                const cardContainer = document.getElementById('cardContainer');
+                cardContainer.innerHTML = '';
+
+                if (!this.currentDeck || this.currentCards.length === 0) {
+                    this.showEmptyState();
+                    return;
+                }
+
+                // Create card stack with up to 3 visible cards
+                const visibleCards = this.currentCards.slice(0, Math.min(3, this.currentCards.length));
+                
+                visibleCards.forEach((cardContent, index) => {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'card';
+                    cardElement.innerHTML = `
+                        <div class="card-category">${this.currentDeck.category}</div>
+                        <div class="card-content">${cardContent}</div>
+                        <div class="swipe-indicator left">NOPE</div>
+                        <div class="swipe-indicator right">LIKE</div>
+                        <div class="swipe-indicator up">SUPER</div>
+                    `;
+                    
+                    cardContainer.appendChild(cardElement);
+                });
+
+                // Add card stack container wrapper
+                const stackWrapper = document.createElement('div');
+                stackWrapper.className = 'card-stack';
+                
+                while (cardContainer.firstChild) {
+                    stackWrapper.appendChild(cardContainer.firstChild);
+                }
+                
+                cardContainer.appendChild(stackWrapper);
+            }
+
+            swipeCard(direction) {
+                if (!this.currentDeck || this.currentCards.length === 0) return;
+
+                const topCard = document.querySelector('.card:first-child');
+                if (!topCard) return;
+
+                // Add swipe animation
+                topCard.classList.add(`swiped-${direction}`);
+                
+                // Remove the card after animation
+                setTimeout(() => {
+                    this.currentCards.shift();
+                    this.currentCardIndex++;
+                    this.updateStats();
+                    
+                    if (this.currentCards.length === 0) {
+                        this.showCompletionState();
+                    } else {
+                        this.renderCards();
+                    }
+                }, 300);
+
+                // Track swipe analytics (could be extended for actual analytics)
+                this.trackSwipe(direction, this.currentCards[0]);
+            }
+
+            trackSwipe(direction, cardContent) {
+                // This could be extended to send analytics to a backend
+                console.log(`Swiped ${direction}: ${cardContent}`);
+            }
+
+            updateStats() {
+                this.swipeStats.total = this.currentDeck ? this.currentDeck.cards.length : 0;
+                this.swipeStats.swiped = this.currentCardIndex;
+                this.swipeStats.remaining = this.currentCards.length;
+
+                document.getElementById('totalCards').textContent = this.swipeStats.total;
+                document.getElementById('swipedCards').textContent = this.swipeStats.swiped;
+                document.getElementById('remainingCards').textContent = this.swipeStats.remaining;
+            }
+
+            showEmptyState() {
+                const cardContainer = document.getElementById('cardContainer');
+                cardContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📱</div>
+                        <h2 class="empty-title">No Cards Available</h2>
+                        <p class="empty-description">This deck is empty or you've swiped through all cards.</p>
+                        <button class="restart-btn" onclick="app.restartDeck()">Restart Deck</button>
+                    </div>
+                `;
+                document.getElementById('actionButtons').style.display = 'none';
+            }
+
+            showCompletionState() {
+                const cardContainer = document.getElementById('cardContainer');
+                cardContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🎉</div>
+                        <h2 class="empty-title">Deck Complete!</h2>
+                        <p class="empty-description">You've swiped through all ${this.swipeStats.total} cards in this deck.</p>
+                        <button class="restart-btn" onclick="app.restartDeck()">Restart Deck</button>
+                    </div>
+                `;
+                document.getElementById('actionButtons').style.display = 'none';
+            }
+
+            restartDeck() {
+                if (!this.currentDeck) return;
+                
+                this.currentCards = [...this.currentDeck.cards];
+                this.currentCardIndex = 0;
+                this.updateStats();
+                this.renderCards();
+                document.getElementById('actionButtons').style.display = 'flex';
+            }
+
+            showCreateDeckModal() {
+                document.getElementById('createDeckModal').classList.add('show');
+                document.getElementById('deckName').focus();
+            }
+
+            hideCreateDeckModal() {
+                document.getElementById('createDeckModal').classList.remove('show');
+                document.getElementById('createDeckForm').reset();
+            }
+
+            showEditDeckModal(deckId) {
+                const deck = this.decks.find(d => d.id === deckId);
+                if (!deck) return;
+
+                this.editingDeckId = deckId;
+                
+                document.getElementById('editDeckName').value = deck.name;
+                document.getElementById('editDeckDescription').value = deck.description || '';
+                document.getElementById('editDeckCategory').value = deck.category;
+                
+                // Populate existing cards
+                const cardsList = document.getElementById('editCardsList');
+                cardsList.innerHTML = '';
+                
+                deck.cards.forEach((card, index) => {
+                    const cardItem = document.createElement('div');
+                    cardItem.className = 'card-item';
+                    cardItem.innerHTML = `
+                        <span>${card}</span>
+                        <button class="delete-card-btn" onclick="app.deleteCard(${index})" type="button">Delete</button>
+                    `;
+                    cardsList.appendChild(cardItem);
+                });
+                
+                document.getElementById('editDeckModal').classList.add('show');
+            }
+
+            hideEditDeckModal() {
+                document.getElementById('editDeckModal').classList.remove('show');
+                document.getElementById('editDeckForm').reset();
+                this.editingDeckId = null;
+            }
+
+            deleteCard(cardIndex) {
+                if (!this.editingDeckId) return;
+                
+                const deck = this.decks.find(d => d.id === this.editingDeckId);
+                if (!deck) return;
+                
+                deck.cards.splice(cardIndex, 1);
+                this.showEditDeckModal(this.editingDeckId); // Refresh the modal
+            }
+
+            exportDecks() {
+                const dataStr = JSON.stringify(this.decks, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `swipeflow-decks-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            }
+
+            importDecks(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedDecks = JSON.parse(e.target.result);
+                        
+                        if (!Array.isArray(importedDecks)) {
+                            throw new Error('Invalid file format');
+                        }
+                        
+                        // Validate deck structure
+                        importedDecks.forEach(deck => {
+                            if (!deck.id || !deck.name || !deck.cards || !Array.isArray(deck.cards)) {
+                                throw new Error('Invalid deck structure');
+                            }
+                        });
+                        
+                        // Merge with existing decks (avoiding duplicates)
+                        importedDecks.forEach(importedDeck => {
+                            const existingIndex = this.decks.findIndex(d => d.id === importedDeck.id);
+                            if (existingIndex >= 0) {
+                                // Update existing deck
+                                this.decks[existingIndex] = importedDeck;
+                            } else {
+                                // Add new deck
+                                this.decks.push(importedDeck);
+                            }
+                        });
+                        
+                        this.saveDecks();
+                        this.renderDecks();
+                        alert(`Successfully imported ${importedDecks.length} deck(s)!`);
+                        
+                    } catch (error) {
+                        alert('Error importing decks: ' + error.message);
+                    }
+                };
+                
+                reader.readAsText(file);
+                event.target.value = ''; // Reset file input
+            }
+
+            saveDecks() {
+                localStorage.setItem('swipeDecks', JSON.stringify(this.decks));
+            }
+        }
+
+        // Global functions for HTML event handlers
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function showCreateDeckModal() {
+            app.showCreateDeckModal();
+        }
+
+        function swipeCard(direction) {
+            app.swipeCard(direction);
+        }
+
+        function exportDecks() {
+            app.exportDecks();
+        }
+
+        function importDecks(event) {
+            app.importDecks(event);
+        }
+
+        // Initialize the application
+        const app = new SwipeCardEngine();
+
+        // Close modals when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+
+        // Prevent modal close when clicking inside modal content
+        document.querySelectorAll('.modal-content').forEach(content => {
+            content.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+</html>
