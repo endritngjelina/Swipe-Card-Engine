@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipeFlow Pro - Advanced Card Engine</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--light);
+            padding: 0;
+            margin: 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Glassmorphism base */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.7s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.25);
+            transform: translateY(-3px);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            border-radius: 24px;
+            padding: 1.5rem;
+            height: fit-content;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .deck-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .deck-option {
+            padding: 1.2rem;
+            border-radius: 16px;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .deck-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .deck-option:hover::before {
+            left: 100%;
+        }
+
+        .deck-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(8px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .deck-option.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateX(4px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .deck-option.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 0 2px 2px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Card Area */
+        .card-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .card-stack {
+            position: relative;
+            width: 380px;
+            height: 520px;
+            margin: 2rem 0;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--card-bg);
+            border-radius: 28px;
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.2),
+                0 15px 30px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+        }
+
+        .card:active {
+            cursor: grabbing;
+        }
+
+        .card.dragging {
+            transition: none;
+            z-index: 10;
+            box-shadow: 
+                0 35px 70px rgba(0, 0, 0, 0.25),
+                0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card:not(.dragging):nth-child(1) {
+            z-index: 3;
+            transform: scale(1) translateY(0px) rotateX(0deg);
+        }
+
+        .card:not(.dragging):nth-child(2) {
+            z-index: 2;
+            transform: scale(0.96) translateY(12px) rotateX(-3deg);
+            opacity: 0.85;
+        }
+
+        .card:not(.dragging):nth-child(3) {
+            z-index: 1;
+            transform: scale(0.92) translateY(24px) rotateX(-6deg);
+            opacity: 0.7;
+        }
+
+        .card:hover:not(.dragging) {
+            transform: scale(1.02) translateY(-8px);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.25),
+                0 18px 36px rgba(0, 0, 0, 0.18);
+        }
+
+        .card-header {
+            padding: 1.5rem 1.5rem 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-category {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            line-height: 1.3;
+            letter-spacing: -0.5px;
+        }
+
+        .card-description {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+        }
+
+        .card-footer {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .card-footer-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 16px;
+            font-weight: 600;
+            background: rgba(241, 245, 249, 0.6);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-footer-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-footer-btn i {
+            font-size: 1.2rem;
+        }
+
+        .btn-more {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-bookmark {
+            background: rgba(241, 245, 249, 0.8);
+            color: var(--dark);
+        }
+
+        /* AI Recommendations */
+        .ai-recommendations {
+            margin-top: 2rem;
+            width: 100%;
+            border-radius: 24px;
+            padding: 1.5rem;
+        }
+
+        .recommendation-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .recommendation-title i {
+            color: var(--accent);
+        }
+
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .recommendation-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .recommendation-category {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendation-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+
+        .action-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: var(--transition);
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.15),
+                0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-btn:hover::before {
+            opacity: 1;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-8px) scale(1.1);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.2),
+                0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-btn:active {
+            transform: translateY(-4px) scale(1.05);
+        }
+
+        .btn-reject {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-reject:hover {
+            box-shadow: 
+                0 15px 35px rgba(239, 68, 68, 0.4),
+                0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-favorite {
+            background: linear-gradient(135deg, var(--warning), #eab308);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            width: 90px;
+            height: 90px;
+        }
+
+        .btn-favorite:hover {
+            box-shadow: 
+                0 15px 35px rgba(245, 158, 11, 0.4),
+                0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-accept {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-accept:hover {
+            box-shadow: 
+                0 15px 35px rgba(16, 185, 129, 0.4),
+                0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Swipe Indicators */
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 1.5rem 3rem;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1.6rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+        }
+
+        .swipe-indicator.left {
+            left: 30px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+        }
+
+        .swipe-indicator.right {
+            right: 30px;
+            background: rgba(16, 185, 129, 0.95);
+            color: white;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            position: relative;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: linear-gradient(90deg, var(--success), var(--primary), var(--secondary));
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Animations */
+        @keyframes cardFlipIn {
+            from {
+                transform: rotateY(-90deg) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: rotateY(0deg) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                transform: translateY(50px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .card.new {
+            animation: cardSlideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 4rem 2rem;
+            border-radius: 28px;
+            animation: cardSlideIn 0.8s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .empty-state p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 500px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .sidebar {
+                width: 100%;
+                margin-bottom: 1rem;
+                padding: 1.5rem;
+            }
+
+            .card-stack {
+                width: 340px;
+                height: 480px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+
+            .card-stack {
+                width: 300px;
+                height: 440px;
+            }
+
+            .action-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 1.8rem;
+            }
+
+            .btn-favorite {
+                width: 80px;
+                height: 80px;
+            }
+
+            .swipe-indicator {
+                padding: 1rem 2rem;
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-stack {
+                width: 280px;
+                height: 400px;
+            }
+
+            .action-buttons {
+                gap: 1rem;
+            }
+
+            .action-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.6rem;
+            }
+
+            .btn-favorite {
+                width: 70px;
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header glass">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-cards"></i>
+                    </div>
+                    <span>SwipeFlow Pro</span>
+                </a>
+                <div class="nav-controls">
+                    <button class="btn btn-secondary" id="resetBtn">
+                        <i class="fas fa-sync-alt"></i> Reset
+                    </button>
+                    <button class="btn btn-primary" id="createDeckBtn">
+                        <i class="fas fa-plus"></i> Create Deck
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar glass">
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">
+                        <i class="fas fa-layer-group"></i> Select Deck
+                    </h3>
+                    <div class="deck-selector" id="deckSelector">
+                        <div class="deck-option active" data-deck="startup">
+                            <i class="fas fa-lightbulb"></i> Startup Ideas
+                        </div>
+                        <div class="deck-option" data-deck="affirmations">
+                            <i class="fas fa-sparkles"></i> Daily Affirmations
+                        </div>
+                        <div class="deck-option" data-deck="flashcards">
+                            <i class="fas fa-brain"></i> Study Cards
+                        </div>
+                        <div class="deck-option" data-deck="quotes">
+                            <i class="fas fa-quote-right"></i> Inspirational Quotes
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">
+                        <i class="fas fa-chart-line"></i> Progress
+                    </h3>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar" style="width: 25%"></div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card glass">
+                            <div class="stat-number" id="totalCards">24</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat-card glass">
+                            <div class="stat-number" id="remainingCards">18</div>
+                            <div class="stat-label">Remaining</div>
+                        </div>
+                        <div class="stat-card glass">
+                            <div class="stat-number" id="acceptedCards">4</div>
+                            <div class="stat-label">Accepted</div>
+                        </div>
+                        <div class="stat-card glass">
+                            <div class="stat-number" id="rejectedCards">2</div>
+                            <div class="stat-label">Rejected</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">
+                        <i class="fas fa-sync-alt"></i> Sync Status
+                    </h3>
+                    <div class="stat-card glass">
+                        <div class="stat-number">
+                            <i class="fas fa-cloud"></i>
+                        </div>
+                        <div class="stat-label">All Devices Synced</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Card Area -->
+            <main class="card-area">
+                <div class="card-stack" id="cardStack">
+                    <div class="swipe-indicator left">PASS</div>
+                    <div class="swipe-indicator right">LIKE</div>
+                    
+                    <!-- Top Card -->
+                    <div class="card new">
+                        <div class="card-header">
+                            <div class="card-category">AI/Health</div>
+                            <div class="card-ml">
+                                <i class="fas fa-robot" style="color: var(--accent);"></i>
+                                <span style="font-size: 0.8rem; font-weight: 600;">AI Recommended</span>
+                            </div>
+                        </div>
+                        <div class="card-content">
+                            <h3 class="card-title">AI-Powered Personal Fitness Coach</h3>
+                            <p class="card-description">An app that uses computer vision to analyze workout form and provides real-time feedback for home workouts with personalized training plans.</p>
+                        </div>
+                        <div class="card-footer">
+                            <button class="card-footer-btn btn-more">
+                                <i class="fas fa-ellipsis-h"></i> More
+                            </button>
+                            <button class="card-footer-btn btn-bookmark">
+                                <i class="fas fa-bookmark"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Second Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-category">E-commerce</div>
+                        </div>
+                        <div class="card-content">
+                            <h3 class="card-title">Sustainable Fashion Marketplace</h3>
+                            <p class="card-description">A platform connecting eco-conscious consumers with sustainable fashion brands and second-hand luxury items.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Third Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-category">VR/HR</div>
+                        </div>
+                        <div class="card-content">
+                            <h3 class="card-title">Remote Team Bonding Platform</h3>
+                            <p class="card-description">Virtual reality experiences designed to help remote teams build stronger relationships through shared activities.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn btn-reject" id="rejectBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="action-btn btn-favorite" id="favoriteBtn">
+                        <i class="fas fa-star"></i>
+                    </button>
+                    <button class="action-btn btn-accept" id="acceptBtn">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                </div>
+                
+                <!-- AI Recommendations Section -->
+                <div class="ai-recommendations glass">
+                    <div class="recommendation-title">
+                        <i class="fas fa-robot"></i>
+                        <h3>AI Recommendations Based on Your Preferences</h3>
+                    </div>
+                    <div class="recommendation-grid">
+                        <div class="recommendation-card">
+                            <div class="recommendation-category">Health Tech</div>
+                            <div class="recommendation-text">Personalized nutrition planning with AI analysis of your microbiome</div>
+                        </div>
+                        <div class="recommendation-card">
+                            <div class="recommendation-category">Sustainability</div>
+                            <div class="recommendation-text">Smart recycling system that uses computer vision to sort waste</div>
+                        </div>
+                        <div class="recommendation-card">
+                            <div class="recommendation-category">EdTech</div>
+                            <div class="recommendation-text">AI tutor that adapts to individual learning styles in real-time</div>
+                        </div>
+                        <div class="recommendation-card">
+                            <div class="recommendation-category">FinTech</div>
+                            <div class="recommendation-text">Automated investment platform with ethical portfolio options</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        class SwipeCardEngine {
+            constructor() {
+                this.currentDeck = 'startup';
+                this.currentCards = [];
+                this.cardIndex = 0;
+                this.stats = {
+                    total: 0,
+                    accepted: 0,
+                    rejected: 0,
+                    remaining: 0
+                };
+                this.customDecks = new Map();
+                this.isDragging = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.currentX = 0;
+                this.currentY = 0;
+                
+                this.initializeDecks();
+                this.initializeEventListeners();
+                this.loadDeck(this.currentDeck);
+            }
+
+            initializeDecks() {
+                this.decks = {
+                    startup: [
+                        {
+                            title: "AI-Powered Personal Fitness Coach",
+                            description: "An app that uses computer vision to analyze workout form and provides real-time feedback for home workouts with personalized training plans.",
+                            category: "AI/Health",
+                            aiRecommended: true
+                        },
+                        {
+                            title: "Sustainable Fashion Marketplace",
+                            description: "A platform connecting eco-conscious consumers with sustainable fashion brands and second-hand luxury items.",
+                            category: "E-commerce"
+                        },
+                        {
+                            title: "Remote Team Bonding Platform",
+                            description: "Virtual reality experiences designed to help remote teams build stronger relationships through shared activities.",
+                            category: "VR/HR"
+                        },
+                        {
+                            title: "Micro-Learning Language Exchange",
+                            description: "5-minute daily language lessons paired with native speakers for practice via video chat.",
+                            category: "Education"
+                        },
+                        {
+                            title: "Smart Home Energy Optimizer",
+                            description: "IoT system that learns your habits and automatically adjusts appliances to minimize energy consumption.",
+                            category: "IoT/Green"
+                        },
+                        {
+                            title: "Freelancer Financial Management",
+                            description: "All-in-one platform for freelancers to manage invoices, taxes, and retirement planning with AI insights.",
+                            category: "Fintech"
+                        }
+                    ],
+                    affirmations: [
+                        {
+                            title: "Daily Confidence Boost",
+                            description: "I am capable of achieving amazing things today. My unique perspective and skills make me valuable.",
+                            category: "Confidence"
+                        },
+                        {
+                            title: "Embrace Growth",
+                            description: "Every challenge I face is an opportunity to grow stronger and wiser. I welcome new experiences.",
+                            category: "Growth"
+                        },
+                        {
+                            title: "Inner Peace",
+                            description: "I choose to let go of things beyond my control and focus my energy on what I can influence.",
+                            category: "Mindfulness"
+                        },
+                        {
+                            title: "Creative Flow",
+                            description: "My creativity flows freely and abundantly. I trust my intuition to guide me to innovative solutions.",
+                            category: "Creativity"
+                        },
+                        {
+                            title: "Gratitude Practice",
+                            description: "I am grateful for the abundance in my life. Every day brings new reasons to appreciate my journey.",
+                            category: "Gratitude"
+                        },
+                        {
+                            title: "Resilience Reminder",
+                            description: "I have overcome challenges before, and I have the strength to overcome whatever comes my way.",
+                            category: "Strength"
+                        }
+                    ],
+                    flashcards: [
+                        {
+                            title: "JavaScript Closures",
+                            description: "A closure is a function that has access to variables in its outer (enclosing) scope even after the outer function has returned.",
+                            category: "Programming"
+                        },
+                        {
+                            title: "CSS Flexbox",
+                            description: "display: flex creates a flex container. Use justify-content for main axis alignment and align-items for cross axis alignment.",
+                            category: "Web Dev"
+                        },
+                        {
+                            title: "HTTP Status Codes",
+                            description: "200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized), 404 (Not Found), 500 (Server Error).",
+                            category: "Web Dev"
+                        },
+                        {
+                            title: "Big O Notation",
+                            description: "Describes algorithm efficiency: O(1) constant, O(log n) logarithmic, O(n) linear, O(n²) quadratic.",
+                            category: "Algorithms"
+                        },
+                        {
+                            title: "Git Commands",
+                            description: "git add . (stage all), git commit -m 'message', git push origin main, git pull, git branch -b new-branch",
+                            category: "Tools"
+                        },
+                        {
+                            title: "Database Normalization",
+                            description: "1NF: Atomic values, 2NF: No partial dependencies, 3NF: No transitive dependencies. Reduces redundancy.",
+                            category: "Database"
+                        }
+                    ],
+                    quotes: [
+                        {
+                            title: "Innovation Mindset",
+                            description: "\"The way to get started is to quit talking and begin doing.\" - Walt Disney",
+                            category: "Motivation"
+                        },
+                        {
+                            title: "Embrace Failure",
+                            description: "\"I have not failed. I've just found 10,000 ways that won't work.\" - Thomas Edison",
+                            category: "Persistence"
+                        },
+                        {
+                            title: "Design Philosophy",
+                            description: "\"Simplicity is the ultimate sophistication.\" - Leonardo da Vinci",
+                            category: "Design"
+                        },
+                        {
+                            title: "Creative Process",
+                            description: "\"Creativity is intelligence having fun.\" - Albert Einstein",
+                            category: "Creativity"
+                        },
+                        {
+                            title: "Leadership Wisdom",
+                            description: "\"The best way to predict the future is to create it.\" - Peter Drucker",
+                            category: "Leadership"
+                        },
+                        {
+                            title: "Growth Mindset",
+                            description: "\"In the middle of difficulty lies opportunity.\" - Albert Einstein",
+                            category: "Opportunity"
+                        }
+                    ]
+                };
+            }
+
+            initializeEventListeners() {
+                // Deck selection
+                document.getElementById('deckSelector').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('deck-option')) {
+                        document.querySelectorAll('.deck-option').forEach(option => {
+                            option.classList.remove('active');
+                        });
+                        e.target.classList.add('active');
+                        this.loadDeck(e.target.dataset.deck);
+                    }
+                });
+
+                // Action buttons
+                document.getElementById('rejectBtn').addEventListener('click', () => this.swipeCard('left'));
+                document.getElementById('acceptBtn').addEventListener('click', () => this.swipeCard('right'));
+                document.getElementById('favoriteBtn').addEventListener('click', () => this.favoriteCard());
+
+                // Reset button
+                document.getElementById('resetBtn').addEventListener('click', () => this.resetDeck());
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft') this.swipeCard('left');
+                    if (e.key === 'ArrowRight') this.swipeCard('right');
+                    if (e.key === 'ArrowUp') this.favoriteCard();
+                    if (e.key === 'r' || e.key === 'R') this.resetDeck();
+                });
+
+                // Touch and mouse events for dragging
+                this.initializeDragEvents();
+            }
+
+            initializeDragEvents() {
+                const cardStack = document.getElementById('cardStack');
+
+                // Mouse events
+                cardStack.addEventListener('mousedown', (e) => this.handleDragStart(e));
+                document.addEventListener('mousemove', (e) => this.handleDragMove(e));
+                document.addEventListener('mouseup', () => this.handleDragEnd());
+
+                // Touch events
+                cardStack.addEventListener('touchstart', (e) => this.handleDragStart(e.touches[0]), { passive: false });
+                document.addEventListener('touchmove', (e) => this.handleDragMove(e.touches[0]), { passive: false });
+                document.addEventListener('touchend', () => this.handleDragEnd());
+            }
+
+            handleDragStart(e) {
+                const card = e.target.closest('.card');
+                if (!card || card !== document.querySelector('.card')) return;
+
+                this.isDragging = true;
+                this.startX = e.clientX || e.pageX;
+                this.startY = e.clientY || e.pageY;
+                this.currentX = this.startX;
+                this.currentY = this.startY;
+
+                card.classList.add('dragging');
+                e.preventDefault();
+            }
+
+            handleDragMove(e) {
+                if (!this.isDragging) return;
+
+                this.currentX = e.clientX || e.pageX;
+                this.currentY = e.clientY || e.pageY;
+
+                const deltaX = this.currentX - this.startX;
+                const deltaY = this.currentY - this.startY;
+                const rotation = deltaX * 0.1;
+                const opacity = Math.max(0.5, 1 - Math.abs(deltaX) / 300);
+
+                const card = document.querySelector('.card.dragging');
+                if (card) {
+                    card.style.transform = `translateX(${deltaX}px) translateY(${deltaY}px) rotate(${rotation}deg)`;
+                    card.style.opacity = opacity;
+
+                    // Show swipe indicators
+                    const leftIndicator = document.querySelector('.swipe-indicator.left');
+                    const rightIndicator = document.querySelector('.swipe-indicator.right');
+
+                    if (deltaX < -50) {
+                        leftIndicator.style.opacity = Math.min(1, Math.abs(deltaX) / 150);
+                        rightIndicator.style.opacity = 0;
+                    } else if (deltaX > 50) {
+                        rightIndicator.style.opacity = Math.min(1, deltaX / 150);
+                        leftIndicator.style.opacity = 0;
+                    } else {
+                        leftIndicator.style.opacity = 0;
+                        rightIndicator.style.opacity = 0;
+                    }
+                }
+
+                e.preventDefault();
+            }
+
+            handleDragEnd() {
+                if (!this.isDragging) return;
+
+                this.isDragging = false;
+                const deltaX = this.currentX - this.startX;
+                const card = document.querySelector('.card.dragging');
+
+                if (card) {
+                    card.classList.remove('dragging');
+
+                    if (Math.abs(deltaX) > 100) {
+                        // Trigger swipe
+                        this.swipeCard(deltaX > 0 ? 'right' : 'left');
+                    } else {
+                        // Snap back to center
+                        card.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease';
+                        card.style.transform = '';
+                        card.style.opacity = '';
+                        
+                        setTimeout(() => {
+                            card.style.transition = '';
+                        }, 500);
+                    }
+                }
+
+                // Hide swipe indicators
+                document.querySelector('.swipe-indicator.left').style.opacity = 0;
+                document.querySelector('.swipe-indicator.right').style.opacity = 0;
+            }
+
+            loadDeck(deckName) {
+                this.currentDeck = deckName;
+                
+                if (this.customDecks.has(deckName)) {
+                    this.currentCards = [...this.customDecks.get(deckName)];
+                } else {
+                    this.currentCards = [...this.decks[deckName]];
+                }
+                
+                this.cardIndex = 0;
+                this.stats = {
+                    total: this.currentCards.length,
+                    accepted: 0,
+                    rejected: 0,
+                    remaining: this.currentCards.length
+                };
+                
+                this.updateStats();
+                this.renderCards();
+            }
+
+            renderCards() {
+                const cardStack = document.getElementById('cardStack');
+                const indicators = cardStack.querySelectorAll('.swipe-indicator');
+                cardStack.innerHTML = '';
+                
+                // Re-add indicators
+                indicators.forEach(indicator => cardStack.appendChild(indicator));
+
+                if (this.cardIndex >= this.currentCards.length) {
+                    this.showEmptyState();
+                    return;
+                }
+
+                // Render up to 3 cards
+                for (let i = 0; i < 3; i++) {
+                    const cardData = this.currentCards[this.cardIndex + i];
+                    if (!cardData) break;
+
+                    const cardElement = this.createCardElement(cardData);
+                    if (i === 0) cardElement.classList.add('new');
+                    cardStack.appendChild(cardElement);
+                }
+            }
+
+            createCardElement(cardData) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                let aiBadge = '';
+                if (cardData.aiRecommended) {
+                    aiBadge = `
+                        <div class="card-ml">
+                            <i class="fas fa-robot" style="color: var(--accent);"></i>
+                            <span style="font-size: 0.8rem; font-weight: 600;">AI Recommended</span>
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-category">${cardData.category}</div>
+                        ${aiBadge}
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">${cardData.title}</h3>
+                        <p class="card-description">${cardData.description}</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="card-footer-btn btn-more">
+                            <i class="fas fa-ellipsis-h"></i> More
+                        </button>
+                        <button class="card-footer-btn btn-bookmark">
+                            <i class="fas fa-bookmark"></i> Save
+                        </button>
+                    </div>
+                `;
+                
+                return card;
+            }
+
+            swipeCard(direction) {
+                if (this.cardIndex >= this.currentCards.length) return;
+
+                const card = document.querySelector('.card');
+                if (!card) return;
+
+                // Update stats
+                if (direction === 'right') {
+                    this.stats.accepted++;
+                } else if (direction === 'left') {
+                    this.stats.rejected++;
+                }
+                
+                this.stats.remaining--;
+                this.updateStats();
+
+                // Animate card out
+                const translateX = direction === 'right' ? '100vw' : '-100vw';
+                const rotation = direction === 'right' ? '30deg' : '-30deg';
+                
+                card.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                card.style.transform = `translateX(${translateX}) rotate(${rotation})`;
+                card.style.opacity = '0';
+
+                setTimeout(() => {
+                    this.cardIndex++;
+                    this.renderCards();
+                }, 400);
+            }
+
+            favoriteCard() {
+                if (this.cardIndex >= this.currentCards.length) return;
+
+                const card = document.querySelector('.card');
+                if (!card) return;
+
+                // Add favorite animation
+                card.style.transition = 'all 0.3s ease';
+                card.style.transform = 'scale(1.1) rotate(5deg)';
+                
+                setTimeout(() => {
+                    card.style.transform = 'scale(1) rotate(0deg)';
+                    this.swipeCard('right');
+                }, 300);
+            }
+
+            resetDeck() {
+                this.cardIndex = 0;
+                this.stats = {
+                    total: this.currentCards.length,
+                    accepted: 0,
+                    rejected: 0,
+                    remaining: this.currentCards.length
+                };
+                this.updateStats();
+                this.renderCards();
+            }
+
+            updateStats() {
+                document.getElementById('totalCards').textContent = this.stats.total;
+                document.getElementById('remainingCards').textContent = this.stats.remaining;
+                document.getElementById('acceptedCards').textContent = this.stats.accepted;
+                document.getElementById('rejectedCards').textContent = this.stats.rejected;
+
+                // Update progress bar
+                const progress = this.stats.total > 0 ? 
+                    ((this.stats.total - this.stats.remaining) / this.stats.total) * 100 : 0;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+            }
+
+            showEmptyState() {
+                const cardStack = document.getElementById('cardStack');
+                const indicators = cardStack.querySelectorAll('.swipe-indicator');
+                cardStack.innerHTML = '';
+                
+                // Re-add indicators
+                indicators.forEach(indicator => cardStack.appendChild(indicator));
+
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state glass';
+                emptyState.innerHTML = `
+                    <h3>🎉 Deck Complete!</h3>
+                    <p>You've reviewed all cards in this deck. Would you like to start over or try another deck?</p>
+                    <button class="btn btn-primary" onclick="app.resetDeck()">
+                        <i class="fas fa-sync-alt"></i> Start Over
+                    </button>
+                `;
+                cardStack.appendChild(emptyState);
+            }
+        }
+
+        // Initialize the app
+        const app = new SwipeCardEngine();
+
+        // Global functions for inline event handlers
+        window.app = app;
+
+        // Add some visual polish with CSS animations
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add subtle animations to buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Add floating animation to logo
+            document.querySelector('.logo-icon').classList.add('floating');
+        });
+
+        // Add keyboard shortcut hints
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '?') {
+                alert(`Keyboard Shortcuts:
+                
+← Left Arrow: Reject card
+→ Right Arrow: Accept card  
+↑ Up Arrow: Favorite card
+R: Reset deck
+?: Show this help`);
+            }
+        });
+    </script>
+</body>
+</html>
